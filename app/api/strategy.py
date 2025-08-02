@@ -1,39 +1,26 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from flask import Blueprint, render_template, redirect, url_for
+from sqlalchemy import text
+from app.services.db import db  # твоя SQLAlchemy сесія
 
-router = APIRouter()
+strategy_bp = Blueprint('strategy', __name__)
 
-class StrategyRule(BaseModel):
-    id: int
-    name: str
-    condition: str
-    enabled: bool = True
+@strategy_bp.route('/strategy_dashboard')
+def strategy_dashboard():
+    rules = db.session.execute(text("SELECT * FROM strategy_rules ORDER BY id")).fetchall()
+    conditions = db.session.execute(text("SELECT * FROM strategy_conditions ORDER BY 1")).fetchall()
+    sets = db.session.execute(text("SELECT * FROM strategy_sets ORDER BY id")).fetchall()
+    weights = db.session.execute(text("SELECT * FROM strategy_weights ORDER BY user_id, exchange, pair")).fetchall()
 
-# Тимчасова пам'ять (замість БД)
-STRATEGY_RULES = [
-    {"id": 1, "name": "RSI < 30", "condition": "rsi<30", "enabled": True},
-    {"id": 2, "name": "RSI > 70", "condition": "rsi>70", "enabled": False},
-]
+    return render_template(
+        'strategy_dashboard.html',
+        rules=rules,
+        conditions=conditions,
+        sets=sets,
+        weights=weights
+    )
 
-@router.get("/", response_model=list[StrategyRule])
-async def get_rules():
-    return STRATEGY_RULES
-
-@router.post("/", response_model=StrategyRule)
-async def add_rule(rule: StrategyRule):
-    STRATEGY_RULES.append(rule.dict())
-    return rule
-
-@router.put("/{rule_id}", response_model=StrategyRule)
-async def update_rule(rule_id: int, rule: StrategyRule):
-    for idx, r in enumerate(STRATEGY_RULES):
-        if r["id"] == rule_id:
-            STRATEGY_RULES[idx] = rule.dict()
-            return rule
-    return {"error": "Not found"}
-
-@router.delete("/{rule_id}")
-async def delete_rule(rule_id: int):
-    global STRATEGY_RULES
-    STRATEGY_RULES = [r for r in STRATEGY_RULES if r["id"] != rule_id]
-    return {"status": "deleted"}
+@strategy_bp.route('/delete_rule/<int:rule_id>', methods=['POST'])
+def delete_rule(rule_id):
+    db.session.execute(text("DELETE FROM strategy_rules WHERE id = :id"), {"id": rule_id})
+    db.session.commit()
+    return redirect(url_for('strategy.strategy_dashboard'))

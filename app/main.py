@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Request, Form
+from fastapi.encoders import jsonable_encoder
+import json
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -27,6 +29,31 @@ strategy_rules = Table(
     Column("priority", Integer),
 )
 
+strategy_conditions = Table(
+    "strategy_conditions", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("rule_id", Integer),
+    Column("param_name", String),
+    Column("param_value", Float),
+)
+
+strategy_sets = Table(
+    "strategy_sets", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("user_id", Integer),
+    Column("name", String),
+)
+
+strategy_weights = Table(
+    "strategy_weights", metadata,
+    Column("user_id", Integer, primary_key=True),
+    Column("exchange", String, primary_key=True),
+    Column("pair", String, primary_key=True),
+    Column("rsi_weight", Float),
+    Column("forecast_weight", Float),
+    Column("acceleration_weight", Float),
+    Column("trade_logic", String),
+)
 # =====================
 # FastAPI app
 # =====================
@@ -37,6 +64,34 @@ templates = Jinja2Templates(directory="app/templates")
 
 # Session middleware
 app.add_middleware(SessionMiddleware, secret_key="SUPER_SECRET_KEY")
+
+@app.get("/strategy_dashboard", response_class=HTMLResponse)
+async def strategy_dashboard(request: Request):
+    if not require_login(request):
+        return RedirectResponse(url="/login")
+
+    # Асинхронно тягнемо всі таблиці
+    rules = await database.fetch_all(select(strategy_rules).order_by(strategy_rules.c.id))
+    conditions = await database.fetch_all(select(strategy_conditions).order_by(strategy_conditions.c.id))
+    sets_ = await database.fetch_all(select(strategy_sets).order_by(strategy_sets.c.id))
+    weights = await database.fetch_all(
+        select(strategy_weights).order_by(strategy_weights.c.user_id,
+                                         strategy_weights.c.exchange,
+                                         strategy_weights.c.pair)
+    )
+
+    # Перетворюємо на JSON-сумісні об'єкти
+    data_json = {
+        "rules": jsonable_encoder(rules),
+        "conditions": jsonable_encoder(conditions),
+        "sets": jsonable_encoder(sets_),
+        "weights": jsonable_encoder(weights),
+    }
+
+    return templates.TemplateResponse("strategy_dashboard.html", {
+        "request": request,
+        "data_json": json.dumps(data_json),  # передаємо готовий JSON
+    })
 
 
 # Startup / Shutdown

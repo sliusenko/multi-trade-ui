@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Strategy Dashboard</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const data = JSON.parse('{{ data_json|safe }}');
+            console.log("Loaded dashboard data:", data);
+
+            const table = document.getElementById("rules_table");
+            data.rules.forEach(rule => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${rule.id}</td>
+                    <td>${rule.user_id}</td>
+                    <td>${rule.exchange}</td>
+                    <td>${rule.pair}</td>
+                    <td>${rule.action}</td>
+                    <td>${rule.enabled}</td>
+                    <td>
+                        <form action="/delete_rule/${rule.id}" method="post">
+                            <button type="submit">❌</button>
+                        </form>
+                    </td>
+                `;
+                table.appendChild(row);
+            });
+        });
+    </script>
+</head>
+<body>
+<h1>Strategy Dashboard</h1>
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Exchange</th>
+            <th>Pair</th>
+            <th>Action</th>
+            <th>Enabled</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody id="rules_table"></tbody>
+</table>
+</body>
+</html>
