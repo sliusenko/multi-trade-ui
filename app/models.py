@@ -15,6 +15,7 @@ strategy_conditions = Table(
     "strategy_conditions",
     metadata,
     Column("id", Integer, primary_key=True),
+    Column("rule_id", Integer, ForeignKey("strategy_rules.id")),  # ✅ додали
     Column("user_id", Integer),
     Column("exchange", String),
     Column("pair", String),
