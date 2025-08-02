@@ -34,8 +34,7 @@ strategy_sets = Table(
 strategy_weights = Table(
     "strategy_weights",
     metadata,
-    Column("id", Integer, primary_key=True),
-    Column("user_id", Integer),
+    Column("user_id", Integer, primary_key=True),
     Column("exchange", String),
     Column("pair", String),
     Column("rsi_weight", Integer),
