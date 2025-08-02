@@ -15,8 +15,12 @@ strategy_conditions = Table(
     "strategy_conditions",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("rule_id", Integer),
-    Column("condition", String)
+    Column("user_id", Integer),
+    Column("exchange", String),
+    Column("pair", String),
+    Column("action", String),
+    Column("condition_name", String),
+    Column("enabled", Boolean)
 )
 
 strategy_sets = Table(
