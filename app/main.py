@@ -6,6 +6,16 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import Table, Column, Integer, String, Boolean, Float, MetaData, select
 from databases import Database
+from fastapi import FastAPI
+from app.api.strategy import router as strategy_router
+from app.api.strategy import strategy_bp
+from flask import Flask
+
+fastapi_app = FastAPI()
+fastapi_app.include_router(strategy_router)
+
+flask_app = Flask(__name__)
+flask_app.register_blueprint(strategy_bp)
 
 # =====================
 # Database config
