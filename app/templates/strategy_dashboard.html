@@ -3,47 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <title>Strategy Dashboard</title>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const data = JSON.parse('{{ data_json|safe }}');
-            console.log("Loaded dashboard data:", data);
-
-            const table = document.getElementById("rules_table");
-            data.rules.forEach(rule => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${rule.id}</td>
-                    <td>${rule.user_id}</td>
-                    <td>${rule.exchange}</td>
-                    <td>${rule.pair}</td>
-                    <td>${rule.action}</td>
-                    <td>${rule.enabled}</td>
-                    <td>
-                        <form action="/delete_rule/${rule.id}" method="post">
-                            <button type="submit">❌</button>
-                        </form>
-                    </td>
-                `;
-                table.appendChild(row);
-            });
-        });
-    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-<h1>Strategy Dashboard</h1>
-<table border="1">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>User</th>
-            <th>Exchange</th>
-            <th>Pair</th>
-            <th>Action</th>
-            <th>Enabled</th>
-            <th>Delete</th>
-        </tr>
-    </thead>
-    <tbody id="rules_table"></tbody>
-</table>
+<body class="bg-dark text-white">
+<div class="container mt-4">
+
+    <h1 class="mb-4">📊 Strategy Dashboard</h1>
+
+    <script>
+        const data = {{ data_json | safe }};
+        console.log(data);
+    </script>
+
+    <!-- ====================== Strategy Rules ====================== -->
+    <h3>Strategy Rules</h3>
+    <table class="table table-dark table-hover table-bordered align-middle">
+        <thead>
+            <tr>
+                <th>ID</th><th>User</th><th>Exchange</th><th>Pair</th>
+                <th>Action</th><th>Condition</th><th>Enabled</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in data_json | from_json()["rules"] %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td>{{ r.user_id }}</td>
+                <td>{{ r.exchange }}</td>
+                <td>{{ r.pair }}</td>
+                <td>{{ r.action }}</td>
+                <td>{{ r.condition_type }}</td>
+                <td>
+                    {% if r.enabled %}
+                        <span class="badge bg-success">Enabled</span>
+                    {% else %}
+                        <span class="badge bg-danger">Disabled</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- ====================== Strategy Sets ====================== -->
+    <h3>Strategy Sets</h3>
+    <table class="table table-dark table-hover table-bordered align-middle">
+        <thead>
+            <tr>
+                <th>ID</th><th>User</th><th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for s in data_json | from_json()["sets"] %}
+            <tr>
+                <td>{{ s.id }}</td>
+                <td>{{ s.user_id }}</td>
+                <td>{{ s.name }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- ====================== Strategy Weights ====================== -->
+    <h3>Strategy Weights</h3>
+    <table class="table table-dark table-hover table-bordered align-middle">
+        <thead>
+            <tr>
+                <th>User</th><th>Exchange</th><th>Pair</th>
+                <th>RSI</th><th>Forecast</th><th>Acceleration</th><th>Trade Logic</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for w in data_json | from_json()["weights"] %}
+            <tr>
+                <td>{{ w.user_id }}</td>
+                <td>{{ w.exchange }}</td>
+                <td>{{ w.pair }}</td>
+                <td>{{ w.rsi_weight }}</td>
+                <td>{{ w.forecast_weight }}</td>
+                <td>{{ w.acceleration_weight }}</td>
+                <td>{{ w.trade_logic }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</div>
 </body>
 </html>
