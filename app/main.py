@@ -2,6 +2,9 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi import FastAPI, Depends, HTTPException
+from passlib.hash import bcrypt
+import psycopg2
 from app.services.db import database
 from app.api import strategy
 from sqlalchemy import select
@@ -24,6 +27,23 @@ templates = Jinja2Templates(directory="app/templates")
 def require_login(request: Request):
     """Перевірка, чи користувач залогінений"""
     return bool(request.session.get("user"))
+
+app = FastAPI()
+
+def verify_user(email, password):
+    conn = psycopg2.connect("dbname=tradebot user=admin")
+    cur = conn.cursor()
+    cur.execute("SELECT password_hash FROM users WHERE email=%s", (email,))
+    row = cur.fetchone()
+    if row and bcrypt.verify(password, row[0]):
+        return True
+    return False
+
+@app.post("/login")
+def login(email: str, password: str):
+    if verify_user(email, password):
+        return {"status": "success"}
+    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
