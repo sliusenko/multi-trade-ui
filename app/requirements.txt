@@ -3,6 +3,7 @@ uvicorn[standard]
 sqlalchemy
 jinja2
 python-multipart
+databases[postgresql]
 psycopg2-binary
 pandas
 itsdangerous
