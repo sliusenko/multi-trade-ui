@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Strategy Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+    <h1>📊 Strategy Weights</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Pair</th>
+                <th>Weight Type</th>
+                <th>Value</th>
+                <th>Enabled</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for w in weights %}
+        <tr>
+            <td>{{ w.pair }}</td>
+            <td>{{ w.weight_type }}</td>
+            <td>
+                <form method="post" action="/update_weight" class="d-flex">
+                    <input type="hidden" name="id" value="{{ w.id }}">
+                    <input type="number" step="0.1" name="weight_value" value="{{ w.weight_value }}" class="form-control">
+                    <button type="submit" class="btn btn-sm btn-primary ms-2">💾 Save</button>
+                </form>
+            </td>
+            <td>{{ w.enabled }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

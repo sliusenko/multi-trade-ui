@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  ui:
+    build: .
+    container_name: multi-trade-ui
+    ports:
+      - "8000:8000"
+    environment:
+      DB_USER: postgres
+      DB_PASS: mysecretpassword
+      DB_HOST: host.docker.internal  # для доступу до локальної БД
+      DB_NAME: multi_trade_bot
+    volumes:
+      - ./app:/app/app
