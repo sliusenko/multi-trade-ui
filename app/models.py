@@ -1,4 +1,4 @@
-from sqlalchemy import MetaData, Table, Column, Integer, String, Boolean
+from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, MetaData
 
 metadata = MetaData()
 
@@ -15,7 +15,7 @@ strategy_conditions = Table(
     "strategy_conditions",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("rule_id", Integer, ForeignKey("strategy_rules.id")),  # ✅ додали
+    Column("rule_id", Integer, ForeignKey("strategy_rules.id")),  # ✅ правильно
     Column("user_id", Integer),
     Column("exchange", String),
     Column("pair", String),
