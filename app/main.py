@@ -64,6 +64,10 @@ def get_db():
         password="00151763Db3c"
     )
 
+@app.get("/register", response_class=HTMLResponse)
+async def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
 def require_login(request: Request):
     return bool(request.session.get("user"))
 
