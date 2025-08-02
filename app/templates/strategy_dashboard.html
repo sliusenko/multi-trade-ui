@@ -8,127 +8,147 @@
 <body class="bg-light">
 
 <div class="container mt-4">
-
     <div class="d-flex justify-content-between mb-3">
         <h2>Strategy Dashboard</h2>
         <a href="/logout" class="btn btn-danger">Logout</a>
     </div>
 
-    <!-- Strategy Rules -->
+    <!-- Add Rule Form -->
+    <div class="card mb-4">
+        <div class="card-header">Add New Rule</div>
+        <div class="card-body">
+            <form id="addRuleForm">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <input type="text" name="action" placeholder="Action" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="condition_type" placeholder="Condition Type" class="form-control" required>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="enabled" class="form-select">
+                            <option value="true">Enabled</option>
+                            <option value="false">Disabled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">Add</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Strategy Rules Table -->
     <h4>Strategy Rules</h4>
-    <table class="table table-bordered table-sm table-striped">
+    <table class="table table-bordered table-sm table-striped" id="rulesTable">
         <thead class="table-dark">
             <tr>
                 <th>ID</th>
-                <th>User</th>
-                <th>Exchange</th>
-                <th>Pair</th>
                 <th>Action</th>
                 <th>Condition Type</th>
-                <th>Param1</th>
-                <th>Param2</th>
                 <th>Enabled</th>
-                <th>Priority</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for rule in rules %}
-            <tr>
+            <tr data-id="{{ rule.id }}">
                 <td>{{ rule.id }}</td>
-                <td>{{ rule.user_id }}</td>
-                <td>{{ rule.exchange }}</td>
-                <td>{{ rule.pair }}</td>
                 <td>{{ rule.action }}</td>
                 <td>{{ rule.condition_type }}</td>
-                <td>{{ rule.param_1 }}</td>
-                <td>{{ rule.param_2 }}</td>
                 <td>{{ rule.enabled }}</td>
-                <td>{{ rule.priority }}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm editRule">Edit</button>
+                    <button class="btn btn-danger btn-sm deleteRule">Delete</button>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-
-    <!-- Strategy Conditions -->
-    <h4>Strategy Conditions</h4>
-    <table class="table table-bordered table-sm table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>User</th>
-                <th>Exchange</th>
-                <th>Pair</th>
-                <th>Action</th>
-                <th>Condition Name</th>
-                <th>Enabled</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cond in conditions %}
-            <tr>
-                <td>{{ cond.id }}</td>
-                <td>{{ cond.user_id }}</td>
-                <td>{{ cond.exchange }}</td>
-                <td>{{ cond.pair }}</td>
-                <td>{{ cond.action }}</td>
-                <td>{{ cond.condition_name }}</td>
-                <td>{{ cond.enabled }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Strategy Sets -->
-    <h4>Strategy Sets</h4>
-    <table class="table table-bordered table-sm table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>User</th>
-                <th>Name</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for s in sets %}
-            <tr>
-                <td>{{ s.id }}</td>
-                <td>{{ s.user_id }}</td>
-                <td>{{ s.name }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Strategy Weights -->
-    <h4>Strategy Weights</h4>
-    <table class="table table-bordered table-sm table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>User</th>
-                <th>Exchange</th>
-                <th>Pair</th>
-                <th>RSI Weight</th>
-                <th>Forecast Weight</th>
-                <th>Acceleration Weight</th>
-                <th>Trade Logic</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for w in weights %}
-            <tr>
-                <td>{{ w.user_id }}</td>
-                <td>{{ w.exchange }}</td>
-                <td>{{ w.pair }}</td>
-                <td>{{ w.rsi_weight }}</td>
-                <td>{{ w.forecast_weight }}</td>
-                <td>{{ w.acceleration_weight }}</td>
-                <td>{{ w.trade_logic }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const rulesTable = document.getElementById("rulesTable").querySelector("tbody");
+
+    // === Add Rule Form ===
+    document.getElementById("addRuleForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const ruleData = {
+            action: formData.get("action"),
+            condition_type: formData.get("condition_type"),
+            enabled: formData.get("enabled") === "true"
+        };
+
+        const res = await fetch("/api/strategy_rules", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(ruleData)
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            const newRow = `
+                <tr data-id="${data.id}">
+                    <td>${data.id}</td>
+                    <td>${ruleData.action}</td>
+                    <td>${ruleData.condition_type}</td>
+                    <td>${ruleData.enabled}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm editRule">Edit</button>
+                        <button class="btn btn-danger btn-sm deleteRule">Delete</button>
+                    </td>
+                </tr>`;
+            rulesTable.insertAdjacentHTML("beforeend", newRow);
+            e.target.reset();
+        }
+    });
+
+    // === Delete Rule ===
+    rulesTable.addEventListener("click", async (e) => {
+        if (e.target.classList.contains("deleteRule")) {
+            const row = e.target.closest("tr");
+            const id = row.dataset.id;
+
+            if (!confirm("Delete rule " + id + "?")) return;
+
+            const res = await fetch(`/api/strategy_rules/${id}`, {
+                method: "DELETE"
+            });
+
+            if (res.ok) row.remove();
+        }
+    });
+
+    // === Edit Rule (inline prompt) ===
+    rulesTable.addEventListener("click", async (e) => {
+        if (e.target.classList.contains("editRule")) {
+            const row = e.target.closest("tr");
+            const id = row.dataset.id;
+
+            const action = prompt("Enter new action:", row.children[1].textContent);
+            if (!action) return;
+            const condType = prompt("Enter new condition type:", row.children[2].textContent);
+            if (!condType) return;
+            const enabled = confirm("Enable this rule?");
+
+            const res = await fetch(`/api/strategy_rules/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, condition_type: condType, enabled })
+            });
+
+            if (res.ok) {
+                row.children[1].textContent = action;
+                row.children[2].textContent = condType;
+                row.children[3].textContent = enabled;
+            }
+        }
+    });
+});
+</script>
 
 </body>
 </html>
