@@ -103,7 +103,10 @@ async def strategy_dashboard(request: Request):
             "strategy_dashboard.html",
             {
                 "request": request,
-                "data_json": json.dumps(data_json, default=str),  # default=str для безпечного JSON
+                "rules": to_dict_list(rules),
+                "conditions": to_dict_list(conditions),
+                "sets": to_dict_list(sets_),
+                "weights": to_dict_list(weights),
             }
         )
 

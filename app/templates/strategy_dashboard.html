@@ -6,31 +6,23 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-dark text-white">
+
 <div class="container mt-4">
 
-    <h1 class="mb-4">📊 Strategy Dashboard</h1>
-
-    <script>
-        const data = {{ data_json | safe }};
-        console.log(data);
-    </script>
-
-    <!-- ====================== Strategy Rules ====================== -->
-    <h3>Strategy Rules</h3>
-    <table class="table table-dark table-hover table-bordered align-middle">
+    <h2 class="mb-3">Strategy Rules</h2>
+    <table class="table table-dark table-striped align-middle">
         <thead>
             <tr>
-                <th>ID</th><th>User</th><th>Exchange</th><th>Pair</th>
-                <th>Action</th><th>Condition</th><th>Enabled</th>
+                <th>ID</th>
+                <th>Action</th>
+                <th>Condition</th>
+                <th>Enabled</th>
             </tr>
         </thead>
         <tbody>
-        {% for r in data_json | from_json()["rules"] %}
+        {% for r in rules %}
             <tr>
                 <td>{{ r.id }}</td>
-                <td>{{ r.user_id }}</td>
-                <td>{{ r.exchange }}</td>
-                <td>{{ r.pair }}</td>
                 <td>{{ r.action }}</td>
                 <td>{{ r.condition_type }}</td>
                 <td>
@@ -41,40 +33,53 @@
                     {% endif %}
                 </td>
             </tr>
+        {% else %}
+            <tr>
+                <td colspan="4" class="text-center text-secondary">No rules found</td>
+            </tr>
         {% endfor %}
         </tbody>
     </table>
 
-    <!-- ====================== Strategy Sets ====================== -->
-    <h3>Strategy Sets</h3>
-    <table class="table table-dark table-hover table-bordered align-middle">
+    <h2 class="mb-3">Strategy Sets</h2>
+    <table class="table table-dark table-striped align-middle">
         <thead>
             <tr>
-                <th>ID</th><th>User</th><th>Name</th>
+                <th>ID</th>
+                <th>User ID</th>
+                <th>Name</th>
             </tr>
         </thead>
         <tbody>
-        {% for s in data_json | from_json()["sets"] %}
+        {% for s in sets %}
             <tr>
                 <td>{{ s.id }}</td>
                 <td>{{ s.user_id }}</td>
                 <td>{{ s.name }}</td>
             </tr>
+        {% else %}
+            <tr>
+                <td colspan="3" class="text-center text-secondary">No sets found</td>
+            </tr>
         {% endfor %}
         </tbody>
     </table>
 
-    <!-- ====================== Strategy Weights ====================== -->
-    <h3>Strategy Weights</h3>
-    <table class="table table-dark table-hover table-bordered align-middle">
+    <h2 class="mb-3">Strategy Weights</h2>
+    <table class="table table-dark table-striped align-middle">
         <thead>
             <tr>
-                <th>User</th><th>Exchange</th><th>Pair</th>
-                <th>RSI</th><th>Forecast</th><th>Acceleration</th><th>Trade Logic</th>
+                <th>User ID</th>
+                <th>Exchange</th>
+                <th>Pair</th>
+                <th>RSI Weight</th>
+                <th>Forecast Weight</th>
+                <th>Acceleration Weight</th>
+                <th>Trade Logic</th>
             </tr>
         </thead>
         <tbody>
-        {% for w in data_json | from_json()["weights"] %}
+        {% for w in weights %}
             <tr>
                 <td>{{ w.user_id }}</td>
                 <td>{{ w.exchange }}</td>
@@ -83,6 +88,10 @@
                 <td>{{ w.forecast_weight }}</td>
                 <td>{{ w.acceleration_weight }}</td>
                 <td>{{ w.trade_logic }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7" class="text-center text-secondary">No weights found</td>
             </tr>
         {% endfor %}
         </tbody>
