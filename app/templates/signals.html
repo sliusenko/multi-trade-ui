@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signal Log</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Recent Signals</h1>
+    <table border="1">
+        <tr><th>Pair</th><th>Signal</th><th>Timestamp</th></tr>
+        {% for s in signals %}
+        <tr>
+            <td>{{ s.pair }}</td>
+            <td>{{ s.signal }}</td>
+            <td>{{ s.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
