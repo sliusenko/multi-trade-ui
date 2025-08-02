@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8f9fa; }
+    .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 340px; text-align: center; }
+    input { width: 90%; padding: 10px; margin: 10px 0; }
+    button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #218838; }
+    .error { color: red; margin-bottom: 10px; }
+    .success { color: green; margin-bottom: 10px; }
+    .back-link { display: block; margin-top: 15px; text-decoration: none; color: #007bff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Register</h2>
+    <div id="message"></div>
+    <form id="register-form">
+      <input type="number" name="user_id" placeholder="Your User ID" required>
+      <input type="email" name="email" placeholder="Your Email" required>
+      <input type="password" name="password" placeholder="New Password" required>
+      <button type="submit">Register</button>
+    </form>
+    <a class="back-link" href="/login.html">Back to Login</a>
+  </div>
+
+  <script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('message');
+      msg.textContent = '';
+      const data = Object.fromEntries(new FormData(e.target).entries());
+
+      const resp = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const json = await resp.json();
+      if (resp.status === 200) {
+        msg.className = 'success';
+        msg.textContent = json.msg || "Registration successful! You can login now.";
+      } else {
+        msg.className = 'error';
+        msg.textContent = json.detail || "Registration failed";
+      }
+    });
+  </script>
+</body>
+</html>

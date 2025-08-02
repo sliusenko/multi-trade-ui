@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -8,6 +8,8 @@ from sqlalchemy import select
 from app.services.db import database
 from app.api import strategy
 from app.models import strategy_rules, strategy_conditions, strategy_sets, strategy_weights
+from pydantic import BaseModel
+
 
 # Ініціалізація FastAPI
 app = FastAPI()
@@ -17,6 +19,41 @@ app.add_middleware(SessionMiddleware, secret_key="SUPER_SECRET_KEY")
 templates = Jinja2Templates(directory="app/templates")
 
 # ====== Авторизація ======
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class RegisterRequest(BaseModel):
+    user_id: int
+    email: str
+    password: str
+
+
+@app.post("/register")
+def register_user(data: RegisterRequest):
+    conn = psycopg2.connect("dbname=tradebot user=postgres password=postgres host=localhost")
+    cur = conn.cursor()
+
+    cur.execute("SELECT user_id FROM users WHERE user_id=%s", (data.user_id,))
+    result = cur.fetchone()
+    if not result:
+        raise HTTPException(status_code=404, detail="User ID not found")
+
+    password_hash = bcrypt.hash(data.password)
+    cur.execute("""
+        UPDATE users
+        SET email=%s, password_hash=%s
+        WHERE user_id=%s
+    """, (data.email, password_hash, data.user_id))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "success", "msg": "User registered successfully"}
 
 def get_db():
     return psycopg2.connect(
