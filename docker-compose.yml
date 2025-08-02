@@ -1,14 +1,19 @@
 version: "3.9"
+
 services:
   ui:
     build: .
-    container_name: multi-trade-ui
+    container_name: multi_trade_ui
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8080}:8080"
     environment:
+      ENV: dev
       DB_USER: postgres
       DB_PASS: mysecretpassword
-      DB_HOST: host.docker.internal  # для доступу до локальної БД
+      DB_HOST: host.docker.internal
       DB_NAME: multi_trade_bot
     volumes:
       - ./app:/app/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # потрібно для Linux
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
