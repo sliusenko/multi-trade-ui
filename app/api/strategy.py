@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
-from app.models import db, StrategyRule  # твоя модель ORM
 from flask import Blueprint, render_template, redirect, url_for
+from app.services.db import db  # SQLAlchemy session
+from app.models import StrategyRule  # твої ORM-моделі
 
 # Flask Blueprint для рендеру HTML
 strategy_bp = Blueprint('strategy', __name__)
