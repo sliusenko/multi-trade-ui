@@ -1,114 +1,69 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.encoders import jsonable_encoder
-import json
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
-from sqlalchemy import Table, Column, Integer, String, Boolean, Float, MetaData, select
-from databases import Database
-from fastapi import FastAPI
-from app.api.strategy import router as strategy_router
-from app.api.strategy import strategy_bp
-from flask import Flask
+from app.services.db import database
+from app.api import strategy
+from sqlalchemy import select
+from app.models import strategy_rules, strategy_conditions, strategy_sets, strategy_weights
 
-fastapi_app = FastAPI()
-fastapi_app.include_router(strategy_router)
-
-flask_app = Flask(__name__)
-flask_app.register_blueprint(strategy_bp)
-
-# =====================
-# Database config
-# =====================
-DATABASE_URL = "postgresql://bot:00151763Db3c@172.17.0.1:5432/tradebot"  # заміни на свій
-
-database = Database(DATABASE_URL)
-metadata = MetaData()
-
-strategy_rules = Table(
-    "strategy_rules", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("user_id", Integer),
-    Column("exchange", String),
-    Column("pair", String),
-    Column("action", String),
-    Column("condition_type", String),
-    Column("param_1", Float),
-    Column("param_2", Float),
-    Column("enabled", Boolean),
-    Column("priority", Integer),
-)
-
-strategy_conditions = Table(
-    "strategy_conditions", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("user_id", Integer),
-    Column("exchange", String),
-    Column("pair", String),
-    Column("action", String),
-    Column("condition_name", String),
-    Column("enabled", Boolean),
-)
-
-strategy_sets = Table(
-    "strategy_sets", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("user_id", Integer),
-    Column("name", String),
-)
-
-strategy_weights = Table(
-    "strategy_weights", metadata,
-    Column("user_id", Integer, primary_key=True),
-    Column("exchange", String, primary_key=True),
-    Column("pair", String, primary_key=True),
-    Column("rsi_weight", Float),
-    Column("forecast_weight", Float),
-    Column("acceleration_weight", Float),
-    Column("trade_logic", String),
-)
-# =====================
-# FastAPI app
-# =====================
 app = FastAPI()
 
-# Jinja2 templates
+# Підключаємо API-роути
+app.include_router(strategy.router, prefix="/api")
+
+# Підключаємо сесії
+app.add_middleware(SessionMiddleware, secret_key="SUPER_SECRET_KEY")
+
+# Шаблони
 templates = Jinja2Templates(directory="app/templates")
 
-# Session middleware
-app.add_middleware(SessionMiddleware, secret_key="SUPER_SECRET_KEY")
+
+# ====== Авторизація ======
+
+def require_login(request: Request):
+    """Перевірка, чи користувач залогінений"""
+    return bool(request.session.get("user"))
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/login")
+async def login_action(request: Request, username: str = Form(...), password: str = Form(...)):
+    # Простий приклад логіну
+    if username == "admin" and password == "admin123":
+        request.session["user"] = username
+        return RedirectResponse(url="/strategy_dashboard", status_code=303)
+    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=303)
+
+
+# ====== Strategy Dashboard ======
 
 @app.get("/strategy_dashboard", response_class=HTMLResponse)
 async def strategy_dashboard(request: Request):
-    # Якщо не залогінений – редірект на логін
     if not require_login(request):
         return RedirectResponse(url="/login", status_code=303)
 
     try:
-        # Асинхронно тягнемо всі таблиці (порожні теж повернуть [])
+        # Отримуємо дані з БД
         rules = await database.fetch_all(select(strategy_rules).order_by(strategy_rules.c.id))
         conditions = await database.fetch_all(select(strategy_conditions).order_by(strategy_conditions.c.id))
         sets_ = await database.fetch_all(select(strategy_sets).order_by(strategy_sets.c.id))
-        weights = await database.fetch_all(
-            select(strategy_weights).order_by(
-                strategy_weights.c.user_id,
-                strategy_weights.c.exchange,
-                strategy_weights.c.pair
-            )
-        )
+        weights = await database.fetch_all(select(strategy_weights).order_by(
+            strategy_weights.c.user_id,
+            strategy_weights.c.exchange,
+            strategy_weights.c.pair
+        ))
 
-        # Перетворюємо записи в списки словників
         def to_dict_list(records):
             return [dict(r) for r in records] if records else []
 
-        data_json = {
-            "rules": to_dict_list(rules),
-            "conditions": to_dict_list(conditions),
-            "sets": to_dict_list(sets_),
-            "weights": to_dict_list(weights),
-        }
-
-        # Передаємо готовий JSON у шаблон
         return templates.TemplateResponse(
             "strategy_dashboard.html",
             {
@@ -119,57 +74,17 @@ async def strategy_dashboard(request: Request):
                 "weights": to_dict_list(weights),
             }
         )
-
     except Exception as e:
-        # Лог для діагностики
-        print(f"[ERROR] strategy_dashboard: {e}")
-        # Можна зробити кастомну сторінку 500
         return HTMLResponse(content=f"<h1>Internal Server Error</h1><pre>{e}</pre>", status_code=500)
 
-# Startup / Shutdown
+
+# ====== Старт/Стоп БД ======
+
 @app.on_event("startup")
 async def startup():
     await database.connect()
-
 
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
 
-
-# ===== Login =====
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
-
-@app.post("/login")
-async def login_action(request: Request, username: str = Form(...), password: str = Form(...)):
-    # Простий логін
-    if username == "admin" and password == "admin123":
-        request.session["user"] = username
-        return RedirectResponse(url="/dashboard", status_code=303)
-    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
-
-
-@app.get("/logout")
-async def logout(request: Request):
-    request.session.clear()
-    return RedirectResponse(url="/login", status_code=303)
-
-
-# ===== Protected Routes =====
-def require_login(request: Request):
-    return bool(request.session.get("user"))
-
-@app.get("/signals", response_class=HTMLResponse)
-async def signals(request: Request):
-    if not require_login(request):
-        return RedirectResponse(url="/login")
-
-    # TODO: Підключити реальні сигнали з таблиці
-    signals = [
-        {"time": "2025-08-02 12:00", "pair": "BTCUSDT", "signal": "BUY"},
-        {"time": "2025-08-02 12:05", "pair": "ETHUSDT", "signal": "SELL"},
-    ]
-    return templates.TemplateResponse("signals.html", {"request": request, "signals": signals})

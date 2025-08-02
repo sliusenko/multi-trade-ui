@@ -1,11 +1,41 @@
-from app.services.db import db
+from sqlalchemy import MetaData, Table, Column, Integer, String, Boolean
 
-class StrategyRule(db.Model):
-    __tablename__ = "strategy_rules"
-    id = db.Column(db.Integer, primary_key=True)
-    action = db.Column(db.String(50))
-    condition_type = db.Column(db.String(50))
-    enabled = db.Column(db.Boolean)
+metadata = MetaData()
 
-    def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+strategy_rules = Table(
+    "strategy_rules",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("action", String),
+    Column("condition_type", String),
+    Column("enabled", Boolean)
+)
+
+strategy_conditions = Table(
+    "strategy_conditions",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("rule_id", Integer),
+    Column("condition", String)
+)
+
+strategy_sets = Table(
+    "strategy_sets",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("user_id", Integer),
+    Column("name", String)
+)
+
+strategy_weights = Table(
+    "strategy_weights",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("user_id", Integer),
+    Column("exchange", String),
+    Column("pair", String),
+    Column("rsi_weight", Integer),
+    Column("forecast_weight", Integer),
+    Column("acceleration_weight", Integer),
+    Column("trade_logic", String)
+)

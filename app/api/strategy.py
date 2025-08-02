@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
-from database import database
 from sqlalchemy import select
+from app.services.db import database
 from app.models import strategy_rules
 
 router = APIRouter()
@@ -37,7 +37,7 @@ async def update_rule(rule_id: int, rule: RuleUpdate):
         condition_type=rule.condition_type,
         enabled=rule.enabled
     )
-    result = await database.execute(query)
+    await database.execute(query)
     return {"status": "updated", "id": rule_id}
 
 @router.delete("/strategy_rules/{rule_id}")
