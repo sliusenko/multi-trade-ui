@@ -152,29 +152,6 @@ async def logout(request: Request):
 def require_login(request: Request):
     return bool(request.session.get("user"))
 
-
-@app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    if not require_login(request):
-        return RedirectResponse(url="/login")
-
-    query = select(strategy_rules).order_by(strategy_rules.c.id)
-    rules = await database.fetch_all(query)
-
-    # Перетворимо на список словників для шаблону
-    rules_list = [
-        {
-            "id": r.id,
-            "name": f"{r.action} ({r.condition_type})",
-            "condition": r.condition_type,
-            "enabled": r.enabled,
-        }
-        for r in rules
-    ]
-
-    return templates.TemplateResponse("dashboard.html", {"request": request, "rules": rules_list})
-
-
 @app.get("/signals", response_class=HTMLResponse)
 async def signals(request: Request):
     if not require_login(request):
