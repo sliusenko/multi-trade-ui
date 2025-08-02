@@ -20,12 +20,23 @@ class RuleUpdate(RuleBase):
 
 # ===== CRUD Endpoints =====
 
+class StrategyRuleCreate(BaseModel):
+    action: str        # BUY / SELL
+    condition: str     # RSI_BELOW / RSI_ABOVE
+    value: Optional[float] = None
+    # user_id тут більше не передаємо
+
+
 @router.post("/strategy_rules")
-async def create_rule(rule: RuleCreate):
+async def create_rule(
+    rule: StrategyRuleCreate,
+    current_user_id: int = Depends(get_current_user),
+):
     query = strategy_rules.insert().values(
+        user_id=current_user_id,
         action=rule.action,
-        condition_type=rule.condition_type,
-        enabled=rule.enabled
+        condition=rule.condition,
+        value=rule.value
     )
     new_id = await database.execute(query)
     return {"id": new_id, "status": "created"}
