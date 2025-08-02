@@ -2,8 +2,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
 
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASS = os.getenv("DB_PASS", "password")
+DB_USER = os.getenv("DB_USER", "bot")
+DB_PASS = os.getenv("DB_PASS", "00151763Db3c")
 DB_HOST = os.getenv("DB_HOST", "host.docker.internal")  # якщо локально
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "multi_trade_bot")

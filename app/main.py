@@ -8,7 +8,7 @@ from databases import Database
 # =====================
 # Database config
 # =====================
-DATABASE_URL = "postgresql://user:password@<VM-IP>:5432/tradebot"  # заміни на свій
+DATABASE_URL = "postgresql://bot:00151763Db3c@172.17.0.1:5432/tradebot"  # заміни на свій
 
 database = Database(DATABASE_URL)
 metadata = MetaData()
