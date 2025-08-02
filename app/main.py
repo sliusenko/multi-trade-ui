@@ -1,49 +1,58 @@
-from fastapi import FastAPI, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from app.api import trades, strategy, signals
+from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI()
 
-# Статика та шаблони
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Jinja2 templates
 templates = Jinja2Templates(directory="app/templates")
 
-# Авторизація
-security = HTTPBasic()
-def auth(credentials: HTTPBasicCredentials = Depends(security)):
-    if credentials.username != "admin" or credentials.password != "secret":
-        from fastapi import HTTPException, status
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    return credentials
+# Session middleware (SECRET_KEY треба змінити)
+app.add_middleware(SessionMiddleware, secret_key="SUPER_SECRET_KEY")
 
-# API
-app.include_router(trades.router, prefix="/api/trades", tags=["Trades"])
-app.include_router(strategy.router, prefix="/api/strategy", tags=["Strategy"])
-app.include_router(signals.router, prefix="/api/signals", tags=["Signals"])
+# ===== Login =====
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
-# Тимчасові дані (імітація БД)
-STRATEGY_RULES = [
-    {"id": 1, "name": "RSI < 30", "condition": "rsi<30", "enabled": True},
-    {"id": 2, "name": "RSI > 70", "condition": "rsi>70", "enabled": False},
-]
-SIGNAL_LOG = [
-    {"pair": "BTCUSDT", "signal": "BUY", "timestamp": "2025-08-02 12:00"},
-    {"pair": "ETHUSDT", "signal": "SELL", "timestamp": "2025-08-02 12:05"},
-]
+@app.post("/login")
+async def login_action(request: Request, username: str = Form(...), password: str = Form(...)):
+    # Простий логін (можна зробити з БД)
+    if username == "admin" and password == "admin123":
+        request.session["user"] = username
+        return RedirectResponse(url="/dashboard", status_code=303)
+    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=303)
+
+# ===== Protected Routes =====
+def require_login(request: Request):
+    if not request.session.get("user"):
+        return False
+    return True
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, user: HTTPBasicCredentials = Depends(auth)):
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "rules": STRATEGY_RULES
-    })
+async def dashboard(request: Request):
+    if not require_login(request):
+        return RedirectResponse(url="/login")
+    # Тут підставиш свої strategy_rules
+    rules = [
+        {"id": 1, "name": "RSI Buy < 30"},
+        {"id": 2, "name": "MACD Cross"},
+    ]
+    return templates.TemplateResponse("dashboard.html", {"request": request, "rules": rules})
 
 @app.get("/signals", response_class=HTMLResponse)
-async def signals_page(request: Request, user: HTTPBasicCredentials = Depends(auth)):
-    return templates.TemplateResponse("signals.html", {
-        "request": request,
-        "signals": SIGNAL_LOG[-50:]
-    })
+async def signals(request: Request):
+    if not require_login(request):
+        return RedirectResponse(url="/login")
+    # Тут підставиш лог із record_signal
+    signals = [
+        {"time": "2025-08-02 12:00", "pair": "BTCUSDT", "signal": "BUY"},
+        {"time": "2025-08-02 12:05", "pair": "ETHUSDT", "signal": "SELL"},
+    ]
+    return templates.TemplateResponse("signals.html", {"request": request, "signals": signals})
