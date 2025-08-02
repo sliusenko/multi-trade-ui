@@ -36,7 +36,7 @@ class RegisterRequest(BaseModel):
 
 @app.post("/register")
 def register_user(data: RegisterRequest):
-    conn = psycopg2.connect("dbname=tradebot user=postgres password=postgres host=localhost")
+    conn = psycopg2.connect("dbname=tradebot user=bot password=00151763Db3c host=172.19.0.1")
     cur = conn.cursor()
 
     cur.execute("SELECT user_id FROM users WHERE user_id=%s", (data.user_id,))
