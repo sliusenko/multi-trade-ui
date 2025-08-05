@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
 from app.services.db import SessionLocal        # ✅ виправлено
 from app.models import users           # ✅ виправлено
-from auth.hashing import get_password_hash, verify_password
-from auth.jwt_handler import create_access_token
+from app.auth.hashing import get_password_hash, verify_password
+from app.auth.jwt_handler import create_access_token
 from pydantic import BaseModel
 
 class RegisterRequest(BaseModel):
