@@ -11,7 +11,6 @@ app.add_middleware(SessionMiddleware, secret_key="supersecret")
 
 # Підключення шаблонів і статики
 templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Тимчасова база правил
 rules = [
