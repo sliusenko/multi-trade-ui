@@ -8,11 +8,9 @@ from app.api.strategy import router as strategy_router
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 from app.auth.routes import router as auth_router
-from app.routes.strategy_routes import router as strategy_router
 
 app = FastAPI()
 
-app.include_router(strategy_router)
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(strategy_router, prefix="/strategy", tags=["strategy"])
 # Секретний ключ для сесій
@@ -21,7 +19,6 @@ BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # Підключення папки зі статичними файлами
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.include_router(strategy_router)
 
 # Тимчасова база правил
 rules = [
