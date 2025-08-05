@@ -5,6 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.api.strategy import router as strategy_router
 from pathlib import Path
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 app.include_router(strategy_router)
@@ -12,6 +13,9 @@ app.include_router(strategy_router)
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+# Підключення папки зі статичними файлами
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.include_router(strategy_router)
 
 # Тимчасова база правил
 rules = [
