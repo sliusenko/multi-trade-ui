@@ -7,7 +7,7 @@ async function apiFetch(url, options = {}) {
 }
 
 async function loadRules() {
-    const res = await apiFetch('/api/strategy_rules/');
+    const res = await apiFetch('/api/strategy_rules');
     if (!res.ok) {
         alert('Error loading rules: ' + res.status);
         return;
@@ -48,7 +48,7 @@ async function addRule() {
         priority: parseInt(document.getElementById('priority').value) || null
     };
 
-    const res = await apiFetch('/api/strategy_rules/', {
+    const res = await apiFetch('/api/strategy_rules', {
         method: 'POST',
         body: JSON.stringify(data)
     });

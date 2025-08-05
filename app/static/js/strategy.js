@@ -6,7 +6,7 @@ async function addRule(rule) {
         return;
     }
 
-    const response = await fetch('/api/strategy_rules/', {
+    const response = await fetch('/api/strategy_rules', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
