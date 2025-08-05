@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from typing import Optional
@@ -6,7 +6,8 @@ from app.services.db import database
 from app.models import strategy_rules
 from app.dependencies import get_current_user
 
-router = APIRouter()
+router = APIRouter(prefix="/api/strategy_rules", tags=["Strategy Rules"])
+
 
 # ===== Schemas =====
 class StrategyRuleBase(BaseModel):
@@ -19,41 +20,39 @@ class StrategyRuleBase(BaseModel):
     pair: str
     priority: Optional[int] = None
 
+
 class StrategyRuleCreate(StrategyRuleBase):
     pass
+
 
 class StrategyRuleUpdate(StrategyRuleBase):
     pass
 
-from pydantic import BaseModel
 
-class StrategyRule(BaseModel):
-    action: str
-    condition_type: str
-    param_1: float
-    param_2: float
-    enabled: bool
-    exchange: str
-    pair: str
-    priority: int
+class StrategyRuleOut(StrategyRuleBase):
+    id: int
+    user_id: int
 
-@app.post("/api/strategy_rules")
-async def create_strategy_rule(rule: StrategyRule):
-    # TODO: вставка в БД
-    print("New rule:", rule.dict())
-    return {"status": "ok", "rule": rule.dict()}
+    class Config:
+        orm_mode = True
 
-@router.get("/strategy_rules")
+
+# ===== Routes =====
+
+@router.get("/", response_model=list[StrategyRuleOut])
 async def get_rules(current_user_id: int = Depends(get_current_user)):
+    """Отримати всі правила користувача"""
     query = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
-    return await database.fetch_all(query)
+    rows = await database.fetch_all(query)
+    return rows
 
 
-@router.post("/strategy_rules")
+@router.post("/", response_model=dict)
 async def create_rule(
     rule: StrategyRuleCreate,
     current_user_id: int = Depends(get_current_user)
 ):
+    """Створити нове правило"""
     query = strategy_rules.insert().values(
         user_id=current_user_id,
         action=rule.action,
@@ -69,11 +68,17 @@ async def create_rule(
     return {"id": new_id, "status": "created"}
 
 
-@router.put("/strategy_rules/{rule_id}")
-async def update_rule(rule_id: int, rule: StrategyRuleUpdate):
+@router.put("/{rule_id}", response_model=dict)
+async def update_rule(
+    rule_id: int,
+    rule: StrategyRuleUpdate,
+    current_user_id: int = Depends(get_current_user)
+):
+    """Оновити правило"""
     query = (
         strategy_rules.update()
         .where(strategy_rules.c.id == rule_id)
+        .where(strategy_rules.c.user_id == current_user_id)
         .values(
             action=rule.action,
             condition_type=rule.condition_type,
@@ -85,12 +90,21 @@ async def update_rule(rule_id: int, rule: StrategyRuleUpdate):
             priority=rule.priority
         )
     )
-    await database.execute(query)
+    result = await database.execute(query)
+    if not result:
+        raise HTTPException(status_code=404, detail="Rule not found")
     return {"status": "updated", "id": rule_id}
 
 
-@router.delete("/strategy_rules/{rule_id}")
-async def delete_rule(rule_id: int):
-    query = strategy_rules.delete().where(strategy_rules.c.id == rule_id)
-    await database.execute(query)
+@router.delete("/{rule_id}", response_model=dict)
+async def delete_rule(rule_id: int, current_user_id: int = Depends(get_current_user)):
+    """Видалити правило"""
+    query = (
+        strategy_rules.delete()
+        .where(strategy_rules.c.id == rule_id)
+        .where(strategy_rules.c.user_id == current_user_id)
+    )
+    result = await database.execute(query)
+    if not result:
+        raise HTTPException(status_code=404, detail="Rule not found")
     return {"status": "deleted", "id": rule_id}
