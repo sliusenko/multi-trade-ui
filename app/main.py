@@ -15,7 +15,7 @@ app = FastAPI()
 app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
 
 # Підключення роутів
-app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(auth_router)
 app.include_router(strategy_router, prefix="/strategy", tags=["strategy"])
 # Секретний ключ для сесій
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
