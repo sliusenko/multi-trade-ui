@@ -7,7 +7,7 @@ async function apiFetch(url, options = {}) {
 }
 
 async function loadRules() {
-    const res = await apiFetch('/api/strategy_rules');
+    const res = await apiFetch('/api/strategy_rules/');
     if (!res.ok) {
         alert('Error loading rules: ' + res.status);
         return;
