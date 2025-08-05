@@ -1,139 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Strategy Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta charset="UTF-8">
+  <title>Strategy Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body { background-color: #f8f9fa; padding: 20px; }
+    .table-dark th { text-align: center; }
+    .form-control { margin-right: 5px; }
+  </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between mb-3">
-        <h2>Strategy Dashboard</h2>
-        <a href="/logout" class="btn btn-danger">Logout</a>
-    </div>
+<h3>Strategy Dashboard</h3>
 
-    <!-- Add Rule Form -->
-    <div class="card mb-4">
-        <div class="card-header">Add New Rule</div>
-        <div class="card-body">
-            <form id="addRuleForm" class="row g-2">
-                <div class="col-md-2">
-                    <input type="text" name="action" placeholder="Action (BUY/SELL)" class="form-control" required>
-                </div>
-                <div class="col-md-2">
-                    <input type="text" name="condition_type" placeholder="Condition Type" class="form-control" required>
-                </div>
-                <div class="col-md-1">
-                    <input type="number" step="0.01" name="param_1" placeholder="Param1" class="form-control">
-                </div>
-                <div class="col-md-1">
-                    <input type="number" step="0.01" name="param_2" placeholder="Param2" class="form-control">
-                </div>
-                <div class="col-md-1">
-                    <select name="enabled" class="form-select">
-                        <option value="true">Enabled</option>
-                        <option value="false">Disabled</option>
-                    </select>
-                </div>
-                <div class="col-md-1">
-                    <input type="text" name="exchange" placeholder="Exchange" class="form-control" required>
-                </div>
-                <div class="col-md-1">
-                    <input type="text" name="pair" placeholder="Pair" class="form-control" required>
-                </div>
-                <div class="col-md-1">
-                    <input type="number" name="priority" placeholder="Priority" class="form-control">
-                </div>
-                <div class="col-md-1">
-                    <button type="submit" class="btn btn-success w-100">Add</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Strategy Rules Table -->
-    <h4>Strategy Rules</h4>
-    <table class="table table-bordered table-sm table-striped" id="rulesTable">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Action</th>
-                <th>Condition</th>
-                <th>Param1</th>
-                <th>Param2</th>
-                <th>Enabled</th>
-                <th>Exchange</th>
-                <th>Pair</th>
-                <th>Priority</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+<div class="mb-3 p-3 border rounded bg-white">
+  <h5>Add New Rule</h5>
+  <div class="d-flex">
+    <select id="action" class="form-control">
+      <option value="BUY">BUY</option>
+      <option value="SELL">SELL</option>
+    </select>
+    <input id="condition_type" class="form-control" placeholder="Condition Type (e.g., RSI_ABOVE)">
+    <input id="param_1" class="form-control" placeholder="Param1">
+    <input id="param_2" class="form-control" placeholder="Param2">
+    <select id="enabled" class="form-control">
+      <option value="true">Enabled</option>
+      <option value="false">Disabled</option>
+    </select>
+    <input id="exchange" class="form-control" placeholder="Exchange (e.g., binance)">
+    <input id="pair" class="form-control" placeholder="Pair (e.g., BTCUSDT)">
+    <input id="priority" class="form-control" placeholder="Priority">
+    <button id="addBtn" class="btn btn-success">Add</button>
+  </div>
 </div>
+
+<table class="table table-bordered table-striped">
+  <thead class="table-dark">
+    <tr>
+      <th>ID</th>
+      <th>Action</th>
+      <th>Condition</th>
+      <th>Param1</th>
+      <th>Param2</th>
+      <th>Enabled</th>
+      <th>Exchange</th>
+      <th>Pair</th>
+      <th>Priority</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="rulesTable"></tbody>
+</table>
 
 <script>
 async function loadRules() {
-    const res = await fetch("/api/strategy_rules");
-    const data = await res.json();
-    const tbody = document.querySelector("#rulesTable tbody");
-    tbody.innerHTML = "";
+  const res = await fetch('/api/strategy_rules');
+  const rules = await res.json();
+  const tbody = document.getElementById('rulesTable');
+  tbody.innerHTML = '';
 
-    data.forEach(rule => {
-        tbody.insertAdjacentHTML("beforeend", `
-            <tr data-id="${rule.id}">
-                <td>${rule.id}</td>
-                <td>${rule.action}</td>
-                <td>${rule.condition_type}</td>
-                <td>${rule.param_1 ?? ''}</td>
-                <td>${rule.param_2 ?? ''}</td>
-                <td>${rule.enabled}</td>
-                <td>${rule.exchange}</td>
-                <td>${rule.pair}</td>
-                <td>${rule.priority ?? ''}</td>
-                <td>
-                    <button class="btn btn-warning btn-sm editRule">Edit</button>
-                    <button class="btn btn-danger btn-sm deleteRule">Delete</button>
-                </td>
-            </tr>
-        `);
-    });
+  rules.forEach(rule => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${rule.id}</td>
+      <td>${rule.action}</td>
+      <td>${rule.condition_type}</td>
+      <td>${rule.param_1 ?? ''}</td>
+      <td>${rule.param_2 ?? ''}</td>
+      <td>${rule.enabled ? '✅' : '❌'}</td>
+      <td>${rule.exchange}</td>
+      <td>${rule.pair}</td>
+      <td>${rule.priority}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteRule(${rule.id})">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const rulesTable = document.querySelector("#rulesTable tbody");
+async function addRule() {
+  const data = {
+    action: document.getElementById('action').value,
+    condition_type: document.getElementById('condition_type').value,
+    param_1: document.getElementById('param_1').value,
+    param_2: document.getElementById('param_2').value,
+    enabled: document.getElementById('enabled').value === 'true',
+    exchange: document.getElementById('exchange').value,
+    pair: document.getElementById('pair').value,
+    priority: document.getElementById('priority').value
+  };
 
-    loadRules();
+  const res = await fetch('/api/strategy_rules', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 
-    // Add Rule
-    document.getElementById("addRuleForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const ruleData = Object.fromEntries(formData.entries());
-        ruleData.enabled = ruleData.enabled === "true";
-        ruleData.param_1 = ruleData.param_1 || null;
-        ruleData.param_2 = ruleData.param_2 || null;
-        ruleData.priority = ruleData.priority || null;
+  if (res.ok) {
+    await loadRules();
+    clearForm();
+  } else {
+    alert('Error adding rule');
+  }
+}
 
-        const res = await fetch("/api/strategy_rules", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(ruleData)
-        });
+function clearForm() {
+  document.querySelectorAll('.form-control').forEach(input => input.value = '');
+}
 
-        if (res.ok) {
-            await loadRules();
-            e.target.reset();
-        }
-    });
+async function deleteRule(id) {
+  const res = await fetch(`/api/strategy_rules/${id}`, { method: 'DELETE' });
+  if (res.ok) {
+    await loadRules();
+  } else {
+    alert('Error deleting rule');
+  }
+}
 
-    // Delete Rule
-    rulesTable.addEventListener("click", async (e) => {
-        if (e.target.classList.contains("deleteRule")) {
-            const row = e.target.closest("tr");
-            const id = row.dataset.id;
+document.getElementById('addBtn').addEventListener('click', addRule);
+window.addEventListener('DOMContentLoaded', loadRules);
+</script>
 
-            if (!confirm("Delete rule " + id + "?")) return;
-
-            const res = await
+</body>
+</html>
