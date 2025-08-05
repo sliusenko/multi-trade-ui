@@ -25,6 +25,23 @@ class StrategyRuleCreate(StrategyRuleBase):
 class StrategyRuleUpdate(StrategyRuleBase):
     pass
 
+from pydantic import BaseModel
+
+class StrategyRule(BaseModel):
+    action: str
+    condition_type: str
+    param_1: float
+    param_2: float
+    enabled: bool
+    exchange: str
+    pair: str
+    priority: int
+
+@app.post("/api/strategy_rules")
+async def create_strategy_rule(rule: StrategyRule):
+    # TODO: вставка в БД
+    print("New rule:", rule.dict())
+    return {"status": "ok", "rule": rule.dict()}
 
 @router.get("/strategy_rules")
 async def get_rules(current_user_id: int = Depends(get_current_user)):
