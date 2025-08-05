@@ -23,14 +23,14 @@ class LoginRequest(BaseModel):
 @router.post("/register")
 async def register_user(data: RegisterRequest):
     # Перевірка, чи існує user_id
-    query = select(users).where(users.c.id == data.user_id)
+    query = select(users).where(users.c.user_id == data.user_id)
     user = await database.fetch_one(query)
     if not user:
         raise HTTPException(status_code=404, detail="User ID not found")
 
     # Оновлюємо email та пароль
     password_hash = bcrypt.hash(data.password)
-    query = users.update().where(users.c.id == data.user_id).values(
+    query = users.update().where(users.c.user_id == data.user_id).values(
         email=data.email, password_hash=password_hash
     )
     await database.execute(query)
