@@ -2,6 +2,17 @@ from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, Meta
 
 metadata = MetaData()
 
+users = Table(
+    "users",
+    metadata,
+    Column("user_id", BigInteger, primary_key=True),
+    Column("username", String),
+    Column("role", String),
+    Column("created_at", TIMESTAMP),
+    Column("email", String(100)),
+    Column("password_hash", String(255))
+)
+
 strategy_rules = Table(
     "strategy_rules",
     metadata,
