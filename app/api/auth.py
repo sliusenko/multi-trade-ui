@@ -51,7 +51,7 @@ async def login_user(request: Request, data: LoginRequest):
     # Зберігаємо сесію
     request.session["user_id"] = user["user_id"]
 
-    return {"status": "success", "msg": "Login successful"}
+    return RedirectResponse(url="/strategy_dashboard", status_code=303)
 
 
 @router.get("/logout")
