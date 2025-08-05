@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
-from app.services.db import SessionLocal        # ✅ виправлено
-from app.models import users           # ✅ виправлено
+from app.services.db import SessionLocal
+from app.models import users
 from app.auth.hashing import get_password_hash, verify_password
 from app.auth.jwt_handler import create_access_token
 from pydantic import BaseModel
@@ -16,7 +16,8 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+# ❌ Прибираємо локальний префікс, залишаємо тільки tags
+router = APIRouter(tags=["Auth"])
 
 async def get_db():
     async with SessionLocal() as session:
@@ -43,4 +44,3 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
 
     token = create_access_token({"sub": str(db_user._mapping["user_id"])})
     return {"access_token": token, "token_type": "bearer"}
-
