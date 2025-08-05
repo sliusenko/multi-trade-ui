@@ -11,7 +11,11 @@ from app.auth.routes import router as auth_router
 
 app = FastAPI()
 
-app.include_router(auth_router, prefix="/auth", tags=["auth"])
+# Підключення статичних файлів
+app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
+
+# Підключення роутів
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(strategy_router, prefix="/strategy", tags=["strategy"])
 # Секретний ключ для сесій
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
