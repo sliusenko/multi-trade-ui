@@ -38,7 +38,7 @@ class StrategyRuleOut(StrategyRuleBase):
 
 
 # ===== Routes =====
-@router.get("/", response_model=List[StrategyRuleOut])
+@router.get("", response_model=List[StrategyRuleOut])
 async def get_rules(current_user_id: int = Depends(get_current_user)):
     """Отримати всі правила користувача"""
     query = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
