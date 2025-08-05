@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.api.strategy_rules import router as strategy_rules_router
+from app.api.strategy import router as strategy_rules_router
 from pathlib import Path
 
 app = FastAPI()
