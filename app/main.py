@@ -51,3 +51,23 @@ async def update_rule(rule_id: int, rule: dict):
             r.update(rule)
             return r
     return {"error": "not found"}
+
+
+from pydantic import BaseModel
+
+class StrategyRule(BaseModel):
+    action: str
+    condition_type: str
+    param_1: float
+    param_2: float
+    enabled: bool
+    exchange: str
+    pair: str
+    priority: int
+
+@app.post("/api/strategy_rules")
+async def create_strategy_rule(rule: StrategyRule):
+    # TODO: вставка в БД
+    print("New rule:", rule.dict())
+    return {"status": "ok", "rule": rule.dict()}
+
