@@ -8,9 +8,8 @@ app = FastAPI()
 
 # Секретний ключ для сесій
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
-
-# Підключення шаблонів і статики
-templates = Jinja2Templates(directory="templates")
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # Тимчасова база правил
 rules = [
