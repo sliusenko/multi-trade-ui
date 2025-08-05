@@ -5,6 +5,14 @@ from app.services.db import database
 from app.models import strategy_rules
 from typing import Optional
 from fastapi import Depends
+from fastapi import APIRouter, Depends
+from app.dependencies import get_current_user
+
+router = APIRouter()
+
+@router.get("/")
+async def get_strategy_rules(current_user_id: int = Depends(get_current_user)):
+    return {"message": f"Strategy endpoint works for user {current_user_id}"}
 
 router = APIRouter()
 
