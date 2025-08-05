@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
-from typing import Optional
+from typing import Optional, List
 from app.services.db import database
 from app.models import strategy_rules
 from app.dependencies import get_current_user
@@ -39,7 +39,7 @@ class StrategyRuleOut(StrategyRuleBase):
 
 # ===== Routes =====
 
-@router.get("/", response_model=list[StrategyRuleOut])
+@router.get("/", response_model=List[StrategyRuleOut])
 async def get_rules(current_user_id: int = Depends(get_current_user)):
     """Отримати всі правила користувача"""
     query = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
