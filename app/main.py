@@ -3,11 +3,11 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.api.strategy import router as strategy_rules_router
+from app.api.strategy import router as strategy_router
 from pathlib import Path
 
 app = FastAPI()
-app.include_router(strategy_rules_router)
+app.include_router(strategy_router)
 # Секретний ключ для сесій
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
 BASE_DIR = Path(__file__).resolve().parent
