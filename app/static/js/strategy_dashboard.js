@@ -48,7 +48,7 @@ async function addRule() {
         priority: parseInt(document.getElementById('priority').value) || null
     };
 
-    const res = await apiFetch('/api/strategy_rules', {
+    const res = await apiFetch('/api/strategy_rules/', {
         method: 'POST',
         body: JSON.stringify(data)
     });
