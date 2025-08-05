@@ -30,14 +30,17 @@
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(e.target).entries());
-      const resp = await fetch('/login', {
+
+      const resp = await fetch('/api/auth/login', {  // 🔹 змінено маршрут
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+
       const json = await resp.json();
-      if (resp.status === 200) {
-        window.location.href = '/strategy_dashboard';
+      if (resp.ok && json.access_token) {
+        localStorage.setItem('token', json.access_token); // 🔹 зберігаємо JWT
+        window.location.href = '/strategy_dashboard.html'; // 🔹 перенаправлення
       } else {
         document.getElementById('error').textContent = json.detail || "Invalid credentials";
       }
