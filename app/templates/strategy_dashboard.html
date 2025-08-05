@@ -53,75 +53,7 @@
   <tbody id="rulesTable"></tbody>
 </table>
 
-<script>
-async function loadRules() {
-  const res = await fetch('/api/strategy_rules');
-  const rules = await res.json();
-  const tbody = document.getElementById('rulesTable');
-  tbody.innerHTML = '';
-
-  rules.forEach(rule => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${rule.id}</td>
-      <td>${rule.action}</td>
-      <td>${rule.condition_type}</td>
-      <td>${rule.param_1 ?? ''}</td>
-      <td>${rule.param_2 ?? ''}</td>
-      <td>${rule.enabled ? '✅' : '❌'}</td>
-      <td>${rule.exchange}</td>
-      <td>${rule.pair}</td>
-      <td>${rule.priority}</td>
-      <td>
-        <button class="btn btn-danger btn-sm" onclick="deleteRule(${rule.id})">Delete</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-async function addRule() {
-  const data = {
-    action: document.getElementById('action').value,
-    condition_type: document.getElementById('condition_type').value,
-    param_1: document.getElementById('param_1').value,
-    param_2: document.getElementById('param_2').value,
-    enabled: document.getElementById('enabled').value === 'true',
-    exchange: document.getElementById('exchange').value,
-    pair: document.getElementById('pair').value,
-    priority: document.getElementById('priority').value
-  };
-
-  const res = await fetch('/api/strategy_rules', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-
-  if (res.ok) {
-    await loadRules();
-    clearForm();
-  } else {
-    alert('Error adding rule');
-  }
-}
-
-function clearForm() {
-  document.querySelectorAll('.form-control').forEach(input => input.value = '');
-}
-
-async function deleteRule(id) {
-  const res = await fetch(`/api/strategy_rules/${id}`, { method: 'DELETE' });
-  if (res.ok) {
-    await loadRules();
-  } else {
-    alert('Error deleting rule');
-  }
-}
-
-document.getElementById('addBtn').addEventListener('click', addRule);
-window.addEventListener('DOMContentLoaded', loadRules);
-</script>
-
+<!-- ✅ Підключення JS -->
+<script src="/static/js/strategy_dashboard.js"></script>
 </body>
 </html>
