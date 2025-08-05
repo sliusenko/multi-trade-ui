@@ -53,3 +53,7 @@ async def strategy_dashboard(request: Request):
         "request": request,
         "rules": rules
     })
+
+@app.get("/api/strategy_rules")
+async def get_rules():
+    return rules
