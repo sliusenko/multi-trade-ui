@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from app.services.db import database
 from app.models import strategy_rules
+from typing import Optional
 
 router = APIRouter()
 
