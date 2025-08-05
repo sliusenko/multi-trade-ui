@@ -10,13 +10,14 @@ from app.services.db import database
 from app.api import strategy
 from app.models import strategy_rules, strategy_conditions, strategy_sets, strategy_weights
 from pydantic import BaseModel
+from app.api import auth
 
 
 # Ініціалізація FastAPI
 app = FastAPI()
 app.include_router(strategy.router, prefix="/api")
 app.add_middleware(SessionMiddleware, secret_key="SUPER_SECRET_KEY")
-
+app.include_router(auth.router)
 templates = Jinja2Templates(directory="app/templates")
 
 # ====== Авторизація ======
