@@ -1,5 +1,6 @@
-from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, BigInteger, MetaData, Float, MetaData
+from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, BigInteger, MetaData, Float, MetaData, DateTime
 from sqlalchemy.dialects.postgresql import TIMESTAMP
+from datetime import datetime
 
 metadata = MetaData()
 
@@ -7,11 +8,11 @@ users = Table(
     "users",
     metadata,
     Column("user_id", BigInteger, primary_key=True),
-    Column("username", String),
+    Column("username", String, nullable=False, unique=True),
     Column("role", String),
-    Column("created_at", TIMESTAMP),
+    Column("created_at", DateTime, default=datetime.utcnow),
     Column("email", String(100)),
-    Column("password_hash", String(255))
+    Column("password_hash", String(255)),
 )
 
 strategy_rules = Table(
