@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from passlib.hash import bcrypt
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
