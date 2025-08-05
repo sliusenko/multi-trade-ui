@@ -1,5 +1,8 @@
+from fastapi import APIRouter, Request, Form
+from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
@@ -22,22 +25,20 @@ class LoginRequest(BaseModel):
 
 @router.post("/register")
 async def register_user(data: RegisterRequest):
-    # Перевірка наявності user_id
+    # Перевірка, чи існує user_id
     query = select(users).where(users.c.user_id == data.user_id)
     user = await database.fetch_one(query)
     if not user:
         raise HTTPException(status_code=404, detail="User ID not found")
 
-    # Оновлюємо email і пароль
+    # Оновлюємо email та пароль
     password_hash = bcrypt.hash(data.password)
-    query = (
-        users.update()
-        .where(users.c.user_id == data.user_id)
-        .values(email=data.email, password_hash=password_hash)
+    query = users.update().where(users.c.user_id == data.user_id).values(
+        email=data.email, password_hash=password_hash
     )
     await database.execute(query)
 
-    return RedirectResponse(url="/login", status_code=303)
+    return {"status": "success", "msg": "User registered successfully"}
 
 
 @router.post("/login")
@@ -45,13 +46,13 @@ async def login_user(request: Request, data: LoginRequest):
     query = select(users).where(users.c.email == data.username)
     user = await database.fetch_one(query)
 
-    if not user or not bcrypt.verify(data.password, user["password_hash"]):
+    if not user or not bcrypt.verify(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Зберігаємо сесію
-    request.session["user_id"] = user["user_id"]
+    request.session["user_id"] = user_id
 
-    return RedirectResponse(url="/strategy_dashboard", status_code=303)
+    return {"status": "success", "msg": "Login successful"}
 
 
 @router.get("/logout")
