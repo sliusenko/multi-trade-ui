@@ -4,7 +4,7 @@ from passlib.hash import bcrypt
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from app.services.db import database
-from app.models import users
+from models import users
 
 router = APIRouter()
 
