@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
+from app.services.db import database
 from app.api.strategy import router as strategy_router
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
@@ -22,6 +23,14 @@ rules = [
     {"id": 1, "action": "Buy", "condition_type": "RSI<30", "enabled": True},
     {"id": 2, "action": "Sell", "condition_type": "RSI>70", "enabled": False},
 ]
+
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
 
 @app.get("/")
 async def home():
