@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, BigInteger, MetaData
+from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, BigInteger, MetaData, Float, MetaData
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 
 metadata = MetaData()
@@ -18,9 +18,15 @@ strategy_rules = Table(
     "strategy_rules",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("action", String),
-    Column("condition_type", String),
-    Column("enabled", Boolean)
+    Column("user_id", Integer, nullable=False),
+    Column("exchange", String, nullable=False),
+    Column("pair", String, nullable=False),
+    Column("action", String, nullable=False),
+    Column("condition_type", String, nullable=False),
+    Column("param_1", Float),
+    Column("param_2", Float),
+    Column("enabled", Boolean, default=True),
+    Column("priority", Integer, default=0),
 )
 
 strategy_conditions = Table(
