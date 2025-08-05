@@ -37,7 +37,7 @@ async def register_user(data: RegisterRequest):
     )
     await database.execute(query)
 
-    return {"status": "success", "msg": "User registered successfully"}
+    return RedirectResponse(url="/login", status_code=303)
 
 
 @router.post("/login")
