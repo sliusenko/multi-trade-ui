@@ -17,23 +17,36 @@
     <div class="card mb-4">
         <div class="card-header">Add New Rule</div>
         <div class="card-body">
-            <form id="addRuleForm">
-                <div class="row g-2">
-                    <div class="col-md-3">
-                        <input type="text" name="action" placeholder="Action" class="form-control" required>
-                    </div>
-                    <div class="col-md-3">
-                        <input type="text" name="condition_type" placeholder="Condition Type" class="form-control" required>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="enabled" class="form-select">
-                            <option value="true">Enabled</option>
-                            <option value="false">Disabled</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-success w-100">Add</button>
-                    </div>
+            <form id="addRuleForm" class="row g-2">
+                <div class="col-md-2">
+                    <input type="text" name="action" placeholder="Action (BUY/SELL)" class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="condition_type" placeholder="Condition Type" class="form-control" required>
+                </div>
+                <div class="col-md-1">
+                    <input type="number" step="0.01" name="param_1" placeholder="Param1" class="form-control">
+                </div>
+                <div class="col-md-1">
+                    <input type="number" step="0.01" name="param_2" placeholder="Param2" class="form-control">
+                </div>
+                <div class="col-md-1">
+                    <select name="enabled" class="form-select">
+                        <option value="true">Enabled</option>
+                        <option value="false">Disabled</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <input type="text" name="exchange" placeholder="Exchange" class="form-control" required>
+                </div>
+                <div class="col-md-1">
+                    <input type="text" name="pair" placeholder="Pair" class="form-control" required>
+                </div>
+                <div class="col-md-1">
+                    <input type="number" name="priority" placeholder="Priority" class="form-control">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-success w-100">Add</button>
                 </div>
             </form>
         </div>
@@ -46,41 +59,62 @@
             <tr>
                 <th>ID</th>
                 <th>Action</th>
-                <th>Condition Type</th>
+                <th>Condition</th>
+                <th>Param1</th>
+                <th>Param2</th>
                 <th>Enabled</th>
+                <th>Exchange</th>
+                <th>Pair</th>
+                <th>Priority</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-            {% for rule in rules %}
-            <tr data-id="{{ rule.id }}">
-                <td>{{ rule.id }}</td>
-                <td>{{ rule.action }}</td>
-                <td>{{ rule.condition_type }}</td>
-                <td>{{ rule.enabled }}</td>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+async function loadRules() {
+    const res = await fetch("/api/strategy_rules");
+    const data = await res.json();
+    const tbody = document.querySelector("#rulesTable tbody");
+    tbody.innerHTML = "";
+
+    data.forEach(rule => {
+        tbody.insertAdjacentHTML("beforeend", `
+            <tr data-id="${rule.id}">
+                <td>${rule.id}</td>
+                <td>${rule.action}</td>
+                <td>${rule.condition_type}</td>
+                <td>${rule.param_1 ?? ''}</td>
+                <td>${rule.param_2 ?? ''}</td>
+                <td>${rule.enabled}</td>
+                <td>${rule.exchange}</td>
+                <td>${rule.pair}</td>
+                <td>${rule.priority ?? ''}</td>
                 <td>
                     <button class="btn btn-warning btn-sm editRule">Edit</button>
                     <button class="btn btn-danger btn-sm deleteRule">Delete</button>
                 </td>
             </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+        `);
+    });
+}
 
-<script>
 document.addEventListener("DOMContentLoaded", () => {
-    const rulesTable = document.getElementById("rulesTable").querySelector("tbody");
+    const rulesTable = document.querySelector("#rulesTable tbody");
 
-    // === Add Rule Form ===
+    loadRules();
+
+    // Add Rule
     document.getElementById("addRuleForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const ruleData = {
-            action: formData.get("action"),
-            condition_type: formData.get("condition_type"),
-            enabled: formData.get("enabled") === "true"
-        };
+        const ruleData = Object.fromEntries(formData.entries());
+        ruleData.enabled = ruleData.enabled === "true";
+        ruleData.param_1 = ruleData.param_1 || null;
+        ruleData.param_2 = ruleData.param_2 || null;
+        ruleData.priority = ruleData.priority || null;
 
         const res = await fetch("/api/strategy_rules", {
             method: "POST",
@@ -89,24 +123,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (res.ok) {
-            const data = await res.json();
-            const newRow = `
-                <tr data-id="${data.id}">
-                    <td>${data.id}</td>
-                    <td>${ruleData.action}</td>
-                    <td>${ruleData.condition_type}</td>
-                    <td>${ruleData.enabled}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm editRule">Edit</button>
-                        <button class="btn btn-danger btn-sm deleteRule">Delete</button>
-                    </td>
-                </tr>`;
-            rulesTable.insertAdjacentHTML("beforeend", newRow);
+            await loadRules();
             e.target.reset();
         }
     });
 
-    // === Delete Rule ===
+    // Delete Rule
     rulesTable.addEventListener("click", async (e) => {
         if (e.target.classList.contains("deleteRule")) {
             const row = e.target.closest("tr");
@@ -114,41 +136,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!confirm("Delete rule " + id + "?")) return;
 
-            const res = await fetch(`/api/strategy_rules/${id}`, {
-                method: "DELETE"
-            });
-
-            if (res.ok) row.remove();
-        }
-    });
-
-    // === Edit Rule (inline prompt) ===
-    rulesTable.addEventListener("click", async (e) => {
-        if (e.target.classList.contains("editRule")) {
-            const row = e.target.closest("tr");
-            const id = row.dataset.id;
-
-            const action = prompt("Enter new action:", row.children[1].textContent);
-            if (!action) return;
-            const condType = prompt("Enter new condition type:", row.children[2].textContent);
-            if (!condType) return;
-            const enabled = confirm("Enable this rule?");
-
-            const res = await fetch(`/api/strategy_rules/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action, condition_type: condType, enabled })
-            });
-
-            if (res.ok) {
-                row.children[1].textContent = action;
-                row.children[2].textContent = condType;
-                row.children[3].textContent = enabled;
-            }
-        }
-    });
-});
-</script>
-
-</body>
-</html>
+            const res = await
