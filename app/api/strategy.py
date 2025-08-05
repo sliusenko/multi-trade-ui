@@ -38,13 +38,19 @@ class StrategyRuleOut(StrategyRuleBase):
 
 
 # ===== Routes =====
-
 @router.get("/", response_model=List[StrategyRuleOut])
-async def get_rules(current_user_id: int = Depends(get_current_user)):
-    """Отримати всі правила користувача"""
-    query = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
+async def get_rules():
+    query = select(strategy_rules)
     rows = await database.fetch_all(query)
     return [StrategyRuleOut(**dict(row)) for row in rows]
+
+
+# @router.get("/", response_model=List[StrategyRuleOut])
+# async def get_rules(current_user_id: int = Depends(get_current_user)):
+#     """Отримати всі правила користувача"""
+#     query = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
+#     rows = await database.fetch_all(query)
+#     return [StrategyRuleOut(**dict(row)) for row in rows]
 
 
 @router.post("/", response_model=dict)
