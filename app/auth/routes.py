@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
 from db import SessionLocal
-from models import users
+from app.services.db import SessionLocal        # ✅ виправлено
+from app.models import users           # ✅ виправлено
 from auth.hashing import get_password_hash, verify_password
 from auth.jwt_handler import create_access_token
 from pydantic import BaseModel
