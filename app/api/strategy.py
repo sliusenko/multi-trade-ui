@@ -45,7 +45,7 @@ async def get_rules(current_user_id: int = Depends(get_current_user)):
     rows = await database.fetch_all(query)
     return [StrategyRuleOut(**dict(row)) for row in rows]
 
-@router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_rule(
     rule: StrategyRuleCreate,
     current_user_id: int = Depends(get_current_user)
