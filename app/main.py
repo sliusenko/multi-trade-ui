@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -11,9 +11,6 @@ from app.auth.routes import router as auth_router
 
 app = FastAPI()
 
-# Підключення статичних файлів
-app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
-
 # Підключення роутів
 app.include_router(auth_router)
 app.include_router(strategy_router, prefix="/strategy", tags=["strategy"])
@@ -21,14 +18,17 @@ app.include_router(strategy_router, prefix="/strategy", tags=["strategy"])
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-# Підключення папки зі статичними файлами
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 
 # Тимчасова база правил
 rules = [
     {"id": 1, "action": "Buy", "condition_type": "RSI<30", "enabled": True},
     {"id": 2, "action": "Sell", "condition_type": "RSI>70", "enabled": False},
 ]
+
+@app.get("/")
+async def index():
+    return FileResponse("app/static/login.html")
 
 @app.on_event("startup")
 async def startup():
