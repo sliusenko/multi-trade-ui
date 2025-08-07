@@ -37,6 +37,11 @@
           body: JSON.stringify(data)
       });
 
+      const expiryTime = Date.now() + 60 * 60 * 1000; // 1 година
+      localStorage.setItem('access_token', json.access_token);
+      localStorage.setItem('token_expires_at', expiryTime);
+      window.location.href = '/strategy_dashboard';
+
       const json = await resp.json();
 
       if (resp.ok && json.access_token) {
