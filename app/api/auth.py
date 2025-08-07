@@ -8,7 +8,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from app.services.db import database
 from app.models import users
-from app.auth import create_access_token
+from app.auth.jwt_handler import create_access_token
 
 router = APIRouter()
 
