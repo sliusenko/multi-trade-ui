@@ -44,7 +44,9 @@ async def register_user(data: RegisterRequest):
 
 @router.post("/login")
 async def login_user(request: Request, data: LoginRequest):
-    query = select(users).where((users.c.username == data.username) | (users.c.email == data.username))
+    query = select(users).where(
+        (users.c.username == data.username) | (users.c.email == data.username)
+    )
     user = await database.fetch_one(query)
 
     if not user or not bcrypt.verify(data.password, user["password_hash"]):
