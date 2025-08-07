@@ -7,7 +7,8 @@ from pathlib import Path
 
 from app.services.db import database
 from app.api.strategy import router as strategy_router
-from app.auth.routes import router as auth_router
+#from app.auth.routes import router as auth_router
+from app.api.auth import router as auth_router
 
 app = FastAPI()
 

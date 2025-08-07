@@ -1,17 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Form
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import insert, select, or_
-from app.services.db import SessionLocal, database
+from sqlalchemy import insert, select
+from app.services.db import SessionLocal
 from app.models import users
 from app.auth.hashing import get_password_hash, verify_password
 from app.auth.jwt_handler import create_access_token
-from pydantic import BaseModel,  BaseModel, EmailStr
-
-from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
-from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import JSONResponse
-from passlib.hash import bcrypt
+from pydantic import BaseModel
 
 class RegisterRequest(BaseModel):
     username: str
@@ -41,28 +35,12 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
     return {"status": "registered"}
 
-# @router.post("/login")
-# async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
-#     result = await db.execute(select(users).where(users.c.username == data.username))
-#     db_user = result.first()
-#     if not db_user or not verify_password(data.password, db_user._mapping["password_hash"]):
-#         raise HTTPException(status_code=401, detail="Invalid username or password")
-#
-#     token = create_access_token({"sub": str(db_user._mapping["user_id"])})
-#     return {"access_token": token, "token_type": "bearer"}
-
 @router.post("/login")
-async def login_user(request: Request, data: LoginRequest):
-    query = select(users).where(
-        or_(
-            users.c.username == data.username,
-            users.c.email == data.username
-        )
-    )
-    user = await database.fetch_one(query)
+async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(users).where(users.c.username == data.username))
+    db_user = result.first()
+    if not db_user or not verify_password(data.password, db_user._mapping["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    if not user or not bcrypt.verify(data.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    token = create_access_token(user["user_id"])
-    return {"access_token": token}
+    token = create_access_token({"sub": str(db_user._mapping["user_id"])})
+    return {"access_token": token, "token_type": "bearer"}
