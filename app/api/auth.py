@@ -50,7 +50,7 @@ async def login_user(request: Request, data: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Зберігаємо сесію
-    request.session["user_id"] = user_id
+    request.session["user_id"] = user
 
     return {"status": "success", "msg": "Login successful"}
 
