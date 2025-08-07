@@ -17,8 +17,8 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # === Роутери ===
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
-#app.include_router(strategy_router, prefix="/strategy", tags=["strategy"])
-app.include_router(strategy_router)
+app.include_router(strategy_router, prefix="/strategy", tags=["strategy"])
+#app.include_router(strategy_router)
 
 # === Middleware для сесій ===
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
