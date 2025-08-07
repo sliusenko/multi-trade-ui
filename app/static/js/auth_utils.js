@@ -14,10 +14,10 @@ function checkAuth(redirect = true) {
     localStorage.removeItem("access_token");
     localStorage.removeItem("token_expires_at");
 
-//    if (redirect) {
-//      console.warn("↪️ Redirecting to /login...");
-//      window.location.href = "/login";
-//    }
+    if (redirect) {
+      console.warn("↪️ Redirecting to /login...");
+      window.location.href = "/login";
+    }
 
     return false;
   }
@@ -30,4 +30,18 @@ function logout() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("token_expires_at");
   window.location.href = "/login";
+}
+
+function isTokenValid() {
+  const token = localStorage.getItem("access_token");
+  const expiresAt = parseInt(localStorage.getItem("token_expires_at") || "0", 10);
+  return token && Date.now() < expiresAt;
+}
+
+function checkAuth(redirect = true) {
+  const valid = isTokenValid();
+  if (!valid && redirect) {
+    window.location.href = "/login";
+  }
+  return valid;
 }
