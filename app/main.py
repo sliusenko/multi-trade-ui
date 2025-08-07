@@ -56,7 +56,7 @@ async def home():
 # === Дашборд стратегії ===
 @app.get("/strategy_dashboard")
 async def strategy_dashboard(request: Request):
-    return templates.TemplateResponse("strategy_dashboard.html", {
+    return templates.TemplateResponse("strategy_dashboard", {
         "request": request,
         "rules": rules
     })
