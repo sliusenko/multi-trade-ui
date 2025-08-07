@@ -57,6 +57,10 @@
 </table>
 
 <!-- ✅ Підключення JS -->
+<script src="/static/js/auth_utils.js"></script>
+<script>
+  if (!checkAuth()) throw new Error("Unauthorized");
+</script>
 <script src="/static/js/strategy_dashboard.js"></script>
 </body>
 </html>
