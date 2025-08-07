@@ -12,4 +12,4 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return 1  # Наприклад, user_id = 1
+    return 46205214 # Наприклад, user_id = 1
