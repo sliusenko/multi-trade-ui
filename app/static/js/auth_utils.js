@@ -4,7 +4,12 @@ function checkAuth(redirect = true) {
   const token = localStorage.getItem("access_token");
   const expiresAt = localStorage.getItem("token_expires_at");
 
+  console.log("▶️ checkAuth()");
+  console.log("access_token:", token);
+  console.log("expiresAt:", expiresAt, "| now:", Date.now());
+
   if (!token || !expiresAt || Date.now() > parseInt(expiresAt)) {
+    console.warn("❌ Token missing or expired");
     localStorage.removeItem("access_token");
     localStorage.removeItem("token_expires_at");
 
@@ -15,6 +20,7 @@ function checkAuth(redirect = true) {
     return false;
   }
 
+  console.log("✅ Token valid");
   return true;
 }
 
