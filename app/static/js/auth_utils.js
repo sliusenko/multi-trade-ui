@@ -4,9 +4,10 @@ function checkAuth(redirect = true) {
   const token = localStorage.getItem("access_token");
   const expiresAt = localStorage.getItem("token_expires_at");
 
-  console.log("▶️ checkAuth()");
+  console.log("🔍 checkAuth");
   console.log("access_token:", token);
-  console.log("expiresAt:", expiresAt, "| now:", Date.now());
+  console.log("expiresAt:", expiresAt);
+  console.log("now:", Date.now());
 
   if (!token || !expiresAt || Date.now() > parseInt(expiresAt)) {
     console.warn("❌ Token missing or expired");
@@ -14,13 +15,14 @@ function checkAuth(redirect = true) {
     localStorage.removeItem("token_expires_at");
 
     if (redirect) {
+      console.warn("↪️ Redirecting to /login...");
       window.location.href = "/login";
     }
 
     return false;
   }
 
-  console.log("✅ Token valid");
+  console.log("✅ Token is valid");
   return true;
 }
 
