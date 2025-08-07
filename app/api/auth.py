@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from app.services.db import database
 from app.models import users
 from app.auth.jwt_handler import create_access_token
@@ -45,7 +45,10 @@ async def register_user(data: RegisterRequest):
 @router.post("/login")
 async def login_user(request: Request, data: LoginRequest):
     query = select(users).where(
-        (users.c.username == data.username) | (users.c.email == data.username)
+        or_(
+            users.c.username == data.username,
+            users.c.email == data.username
+        )
     )
     user = await database.fetch_one(query)
 
