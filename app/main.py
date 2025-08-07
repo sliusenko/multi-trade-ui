@@ -32,6 +32,12 @@ rules = [
     {"id": 2, "action": "Sell", "condition_type": "RSI>70", "enabled": False},
 ]
 
+templates = Jinja2Templates(directory="app/templates")
+
+@app.get("/login")
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
 # === Події старта та завершення ===
 @app.on_event("startup")
 async def startup():
