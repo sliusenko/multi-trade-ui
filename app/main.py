@@ -32,6 +32,10 @@ rules = [
     {"id": 2, "action": "Sell", "condition_type": "RSI>70", "enabled": False},
 ]
 
+print("✅ Routers initialized:")
+for route in app.routes:
+    print(f"{route.path} → {route.methods}")
+
 # === Події старта та завершення ===
 @app.on_event("startup")
 async def startup():
