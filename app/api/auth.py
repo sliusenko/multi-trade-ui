@@ -44,17 +44,28 @@ async def register_user(data: RegisterRequest):
 
 @router.post("/login")
 async def login_user(request: Request, data: LoginRequest):
-    query = select(users).where(
-        (users.c.username == data.username) | (users.c.email == data.username)
-    )
+    query = select(users).where((users.c.username == data.username) | (users.c.email == data.username))
     user = await database.fetch_one(query)
 
     if not user or not bcrypt.verify(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    request.session["user_id"] = user["user_id"]
+    token = create_access_token(user["user_id"])
+    return {"access_token": token}
 
-    return {"access_token": create_access_token(user["user_id"])}
+# @router.post("/login")
+# async def login_user(request: Request, data: LoginRequest):
+#     query = select(users).where(
+#         (users.c.username == data.username) | (users.c.email == data.username)
+#     )
+#     user = await database.fetch_one(query)
+#
+#     if not user or not bcrypt.verify(data.password, user["password_hash"]):
+#         raise HTTPException(status_code=401, detail="Invalid credentials")
+#
+#     request.session["user_id"] = user["user_id"]
+#
+#     return {"access_token": create_access_token(user["user_id"])}
 
 
 @router.get("/logout")
