@@ -14,10 +14,10 @@ function checkAuth(redirect = true) {
     localStorage.removeItem("access_token");
     localStorage.removeItem("token_expires_at");
 
-    if (redirect) {
-      console.warn("↪️ Redirecting to /login...");
-      window.location.href = "/login";
-    }
+//    if (redirect) {
+//      console.warn("↪️ Redirecting to /login...");
+//      window.location.href = "/login";
+//    }
 
     return false;
   }
