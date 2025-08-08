@@ -1,76 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>User Configuration</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <script src="/static/js/auth_utils.js"></script>
-  <style>
-    body { background-color: #f0f2f5; padding: 20px; }
-    .tab-button { margin-right: 10px; }
-    .form-control { margin-bottom: 10px; }
-  </style>
-</head>
-<body>
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('access_token');
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
+}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>🔧 User Configuration</h3>
-  <button onclick="logout()" class="btn btn-outline-danger">Logout</button>
-</div>
+async function loadUsers() {
+  const res = await apiFetch('/api/config/users');
+  if (!res.ok) {
+    alert('❌ Failed to load users: ' + res.status);
+    return;
+  }
+  const users = await res.json();
+  const tbody = document.getElementById('usersTable');
+  tbody.innerHTML = '';
 
-<!-- 🔽 Tab buttons -->
-<div class="mb-3">
-  <button class="btn btn-primary tab-button" onclick="showTab('users')">Users</button>
-  <button class="btn btn-outline-secondary tab-button" onclick="showTab('roles')">Roles</button>
-  <button class="btn btn-outline-secondary tab-button" onclick="showTab('permissions')">Permissions</button>
-</div>
+  users.forEach(user => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${user.user_id}</td>
+      <td>${user.username}</td>
+      <td>${user.email}</td>
+      <td>${user.role}</td>
+      <td>
+        <button class="btn btn-sm btn-warning" onclick='openEditUser(${JSON.stringify(user)})'>Edit</button>
+        <button class="btn btn-sm btn-danger" onclick='deleteUser(${user.user_id})'>Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
-<!-- 🔽 Tab content container -->
-<div id="tab-content">
-  <!-- Users Table -->
-  <div id="users-tab">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5>👤 Users</h5>
-      <button class="btn btn-success" onclick="openAddUserForm()">+ Add User</button>
-    </div>
-    <table class="table table-bordered table-striped">
-      <thead class="table-dark">
-        <tr>
-          <th>ID</th>
-          <th>Username</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="usersTable"></tbody>
-    </table>
-  </div>
-</div>
+function openAddUserForm() {
+  document.getElementById('user_id').value = '';
+  document.getElementById('username').value = '';
+  document.getElementById('email').value = '';
+  document.getElementById('role').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('userModal').style.display = 'block';
+}
 
-<!-- 🔽 User Form Modal -->
-<div class="modal" id="userModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="userModalLabel">Add/Edit User</h5>
-        <button type="button" class="btn-close" onclick="closeUserModal()"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="user_id">
-        <input type="text" id="username" class="form-control" placeholder="Username">
-        <input type="email" id="email" class="form-control" placeholder="Email">
-        <input type="text" id="role" class="form-control" placeholder="Role">
-        <input type="password" id="password" class="form-control" placeholder="Password">
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveUser()">Save</button>
-      </div>
-    </div>
-  </div>
-</div>
+function openEditUser(user) {
+  document.getElementById('user_id').value = user.user_id;
+  document.getElementById('username').value = user.username;
+  document.getElementById('email').value = user.email;
+  document.getElementById('role').value = user.role;
+  document.getElementById('password').value = '';
+  document.getElementById('userModal').style.display = 'block';
+}
 
-<script src="/static/js/users.js?v=1.0"></script>
-</body>
-</html>
+function closeUserModal() {
+  document.getElementById('userModal').style.display = 'none';
+}
+
+async function saveUser() {
+  const user_id = document.getElementById('user_id').value;
+  const method = user_id ? 'PUT' : 'POST';
+  const url = user_id ? `/api/config/users/${user_id}` : '/api/config/users';
+
+  const data = {
+    username: document.getElementById('username').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    role: document.getElementById('role').value.trim()
+  };
+
+  const password = document.getElementById('password').value.trim();
+  if (!user_id && password) data.password = password;
+  if (user_id && password) data.password = password;
+
+  const res = await apiFetch(url, {
+    method,
+    body: JSON.stringify(data)
+  });
+
+  if (res.ok) {
+    closeUserModal();
+    await loadUsers();
+  } else {
+    alert('❌ Failed to save user: ' + res.status);
+  }
+}
+
+async function deleteUser(user_id) {
+  if (!confirm("Are you sure you want to delete this user?")) return;
+
+  const res = await apiFetch(`/api/config/users/${user_id}`, { method: 'DELETE' });
+  if (res.ok) {
+    await loadUsers();
+  } else {
+    alert('❌ Failed to delete user: ' + res.status);
+  }
+}
+
+function showTab(tab) {
+  document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("btn-primary"));
+  document.querySelector(`button[onclick="showTab('${tab}')"]`).classList.add("btn-primary");
+  document.getElementById('users-tab').style.display = tab === 'users' ? 'block' : 'none';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (!checkAuth()) return;
+  loadUsers();
+  showTab('users');
+});
