@@ -5,26 +5,6 @@ async function apiFetch(url, options = {}) {
     return fetch(url, { ...options, headers });
 }
 
-rules.forEach(rule => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td>${rule.id}</td>
-        <td>${rule.action}</td>
-        <td>${rule.condition_type}</td>
-        <td>${rule.param_1 ?? ''}</td>
-        <td>${rule.param_2 ?? ''}</td>
-        <td>${rule.enabled ? '✅' : '❌'}</td>
-        <td>${rule.exchange}</td>
-        <td>${rule.pair}</td>
-        <td>${rule.priority ?? 0}</td>
-        <td>
-            <button class="btn btn-warning btn-sm" onclick='editRule(${JSON.stringify(rule).replace(/'/g, "\\'")})'>Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteRule(${rule.id})">Delete</button>
-        </td>
-    `;
-    tbody.appendChild(tr);
-});
-
 async function addRule() {
     const getInputValue = (id) => document.getElementById(id).value.trim();
     const param1Value = getInputValue('param_1');
@@ -98,5 +78,34 @@ function editRule(rule) {
     document.getElementById('addBtn').textContent = 'Update';
 }
 
-document.getElementById('addBtn').addEventListener('click', addRule);
-window.addEventListener('DOMContentLoaded', loadRules);
+async function loadRules() {
+    const res = await apiFetch('/api/strategy_rules');
+    if (!res.ok) {
+        alert('❌ Error loading rules: ' + res.status);
+        return;
+    }
+
+    const rules = await res.json();
+    const tbody = document.getElementById('rulesTable');
+    tbody.innerHTML = '';
+
+    rules.forEach(rule => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${rule.id}</td>
+            <td>${rule.action}</td>
+            <td>${rule.condition_type}</td>
+            <td>${rule.param_1 ?? ''}</td>
+            <td>${rule.param_2 ?? ''}</td>
+            <td>${rule.enabled ? '✅' : '❌'}</td>
+            <td>${rule.exchange}</td>
+            <td>${rule.pair}</td>
+            <td>${rule.priority ?? 0}</td>
+            <td>
+                <button class="btn btn-warning btn-sm" onclick='editRule(${JSON.stringify(rule).replace(/'/g, "\\'")})'>Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteRule(${rule.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
