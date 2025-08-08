@@ -63,10 +63,10 @@
 <!-- ✅ Основна логіка після перевірки авторизації -->
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-<!--    if (!checkAuth()) {-->
-<!--      console.warn("⛔ Token invalid or expired. Redirecting...");-->
-<!--      return;  // checkAuth вже редіректить-->
-<!--    }-->
+    if (!checkAuth()) {
+      console.warn("⛔ Token invalid or expired. Redirecting...");
+      return;  // checkAuth вже редіректить
+    }
 
     console.log("✅ Authenticated. Initializing dashboard...");
     // Твоя основна логіка: запуск JS з логікою
