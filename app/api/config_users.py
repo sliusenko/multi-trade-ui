@@ -40,7 +40,8 @@ async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(g
 async def update_user(user_id: int, user: user_config.UserUpdate, db: AsyncSession = Depends(get_db)):
     # 1. Перевірка чи юзер існує
     query = select(models.users).where(models.users.c.user_id == user_id)
-    existing_user = await db.fetch_one(query)
+    result = await db.execute(query)
+    existing_user = result.fetchone()
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
