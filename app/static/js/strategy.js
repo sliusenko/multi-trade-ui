@@ -110,5 +110,7 @@ async function loadRules() {
     });
 }
 
-document.getElementById('addBtn').addEventListener('click', addRule);
-window.addEventListener('DOMContentLoaded', loadRules);
+window.addEventListener('DOMContentLoaded', () => {
+  loadRules();
+  document.getElementById('addBtn').addEventListener('click', addRule);
+});
