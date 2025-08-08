@@ -66,3 +66,7 @@ async def strategy_dashboard(request: Request):
 @app.get("/api/strategy_rules")
 async def get_rules():
     return rules
+
+@app.get("/config_users")
+def config_users_page(request: Request):
+    return templates.TemplateResponse("config_users.html", {"request": request})
