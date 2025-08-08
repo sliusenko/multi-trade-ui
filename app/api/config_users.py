@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_db
 from app import models
@@ -39,33 +39,39 @@ async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(g
     row = new_user.fetchone()
     return user_config.UserOut(**dict(row))
 
+from app.auth.jwt_handler import hash_password
+
 @router.put("/{user_id}", response_model=user_config.UserOut)
-async def update_user(user_id: int, user: user_config.UserUpdate, db: AsyncSession = Depends(get_db)):
-    # 1. Перевірка чи юзер існує
-    query = select(models.users).where(models.users.c.user_id == user_id)
-    result = await db.execute(query)
-    existing_user = result.fetchone()
-    if not existing_user:
-        raise HTTPException(status_code=404, detail="User not found")
+async def update_user(
+    user_id: int,
+    updated_data: user_config.UserUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    """Оновити дані користувача"""
 
-    # 2. Оновлення
-    update_data = user.dict(exclude_unset=True)
+    update_data = updated_data.dict(exclude_unset=True)
 
+    # Хешування пароля, якщо його передано
     if "password" in update_data:
         update_data["password_hash"] = hash_password(update_data.pop("password"))
 
     update_query = (
-        users.update()
-        .where(users.c.user_id == user_id)
+        update(models.users)
+        .where(models.users.c.user_id == user_id)
         .values(**update_data)
+        .execution_options(synchronize_session="fetch")
     )
 
     await db.execute(update_query)
     await db.commit()
 
-    # 3. Повернути оновлені дані
-    updated_user = await db.fetch_one(query)
-    return user_config.UserOut(**dict(updated_user))
+    # Отримати оновленого користувача
+    query = select(models.users).where(models.users.c.user_id == user_id)
+    result = await db.execute(query)
+    row = result.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user_config.UserOut(**dict(row))
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
