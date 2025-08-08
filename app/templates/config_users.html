@@ -46,8 +46,46 @@
       <tbody id="usersTable"></tbody>
     </table>
   </div>
+  <!-- Roles Table -->
+  <div id="roles-tab" style="display:none;">
+    <h5>🧑‍💼 Roles</h5>
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody id="rolesTable"></tbody>
+    </table>
+  </div>
+  <!-- Permissions Table -->
+  <div id="permissions-tab" style="display:none;">
+    <h5>🛡️ Permissions</h5>
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody id="permissionsTable"></tbody>
+    </table>
+  </div>
+  <!-- Role-Permissions Table -->
+  <div id="role_permissions-tab" style="display:none;">
+    <h5>🔗 Role-Permissions</h5>
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>Role Name</th>
+          <th>Permission Name</th>
+        </tr>
+      </thead>
+      <tbody id="rolePermissionsTable"></tbody>
+    </table>
+  </div>
 </div>
-
 <!-- 🔽 User Form Modal -->
 <div class="modal" id="userModal" tabindex="-1">
   <div class="modal-dialog">
@@ -72,5 +110,6 @@
 </div>
 
 <script src="/static/js/users.js?v=1.0"></script>
+<script src="/static/js/permissions.js?v=1.0"></script>
 </body>
 </html>
