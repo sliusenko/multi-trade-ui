@@ -1,27 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
-from app.services.db import SessionLocal
+
 from app.models import users
 from app.auth.hashing import get_password_hash, verify_password
 from app.auth.jwt_handler import create_access_token
-from pydantic import BaseModel
+from app.auth.dependencies import get_db
+from app.auth.schemas import RegisterRequest, LoginRequest
 
-class RegisterRequest(BaseModel):
-    username: str
-    password: str
-    email: str
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-# ❌ Прибираємо локальний префікс, залишаємо тільки tags
 router = APIRouter(tags=["Auth"])
-
-async def get_db():
-    async with SessionLocal() as session:
-        yield session
 
 @router.post("/register")
 async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):

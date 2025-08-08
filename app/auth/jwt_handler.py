@@ -5,6 +5,8 @@ from passlib.context import CryptContext
 import os
 
 SECRET_KEY = "supersecret"      # Винеси в .env
+# # Краще зберігати в .env
+# SECRET_KEY = os.getenv("JWT_SECRET", "supersecret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 # Краще зберігати в .env
@@ -31,4 +33,3 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
-

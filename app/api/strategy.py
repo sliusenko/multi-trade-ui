@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from typing import Optional, List
+from enum import Enum
+
 from app.services.db import database
 from app.models import strategy_rules
 from app.dependencies import get_current_user  # Повертає user_id з токена
@@ -9,10 +11,21 @@ from app.dependencies import get_current_user  # Повертає user_id з т�
 router = APIRouter(prefix="/api/strategy_rules", tags=["Strategy Rules"])
 
 
+# ===== Enums =====
+class ActionEnum(str, Enum):
+    BUY = "BUY"
+    SELL = "SELL"
+
+class ConditionTypeEnum(str, Enum):
+    RSI_ABOVE = "RSI_ABOVE"
+    RSI_BELOW = "RSI_BELOW"
+    # Додай інші типи умов за потреби
+
+
 # ===== Schemas =====
 class StrategyRuleBase(BaseModel):
-    action: str
-    condition_type: str
+    action: ActionEnum
+    condition_type: ConditionTypeEnum
     param_1: Optional[float] = None
     param_2: Optional[float] = None
     enabled: bool
@@ -20,16 +33,13 @@ class StrategyRuleBase(BaseModel):
     pair: str
     priority: Optional[int] = None
 
-
 class StrategyRuleCreate(StrategyRuleBase):
     pass
-
 
 class StrategyRuleUpdate(StrategyRuleBase):
     pass
 
-
-class StrategyRuleOut(StrategyRuleBase):
+class StrategyRuleResponse(StrategyRuleBase):
     id: int
     user_id: int
 
@@ -38,14 +48,15 @@ class StrategyRuleOut(StrategyRuleBase):
 
 
 # ===== Routes =====
-@router.get("", response_model=List[StrategyRuleOut])
+@router.get("", response_model=List[StrategyRuleResponse])
 async def get_rules(current_user_id: int = Depends(get_current_user)):
     """Отримати всі правила користувача"""
     query = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
     rows = await database.fetch_all(query)
-    return [StrategyRuleOut(**dict(row)) for row in rows]
+    return [StrategyRuleResponse(**dict(row)) for row in rows]
 
-@router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
+
+@router.post("", response_model=StrategyRuleResponse, status_code=status.HTTP_201_CREATED)
 async def create_rule(
     rule: StrategyRuleCreate,
     current_user_id: int = Depends(get_current_user)
@@ -66,17 +77,16 @@ async def create_rule(
         priority=rule.priority
     )
     new_id = await database.execute(query)
-    return {"id": new_id, "status": "created"}
+    return StrategyRuleResponse(id=new_id, user_id=current_user_id, **rule.dict())
 
 
-@router.put("/{rule_id}", response_model=dict)
+@router.put("/{rule_id}", response_model=StrategyRuleResponse)
 async def update_rule(
     rule_id: int,
     rule: StrategyRuleUpdate,
     current_user_id: int = Depends(get_current_user)
 ):
     """Оновити правило (тільки для власника)"""
-    # Перевірка, чи існує правило і належить користувачу
     query_check = select(strategy_rules).where(
         (strategy_rules.c.id == rule_id) &
         (strategy_rules.c.user_id == current_user_id)
@@ -88,19 +98,10 @@ async def update_rule(
     query = (
         strategy_rules.update()
         .where(strategy_rules.c.id == rule_id)
-        .values(
-            action=rule.action,
-            condition_type=rule.condition_type,
-            param_1=rule.param_1,
-            param_2=rule.param_2,
-            enabled=rule.enabled,
-            exchange=rule.exchange,
-            pair=rule.pair,
-            priority=rule.priority
-        )
+        .values(**rule.dict())
     )
     await database.execute(query)
-    return {"status": "updated", "id": rule_id}
+    return StrategyRuleResponse(id=rule_id, user_id=current_user_id, **rule.dict())
 
 
 @router.delete("/{rule_id}", response_model=dict)
