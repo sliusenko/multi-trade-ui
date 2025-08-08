@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from typing import Optional, List
-from app.schemas import strategy
+from app.schemas.strategy import (
+    StrategyRuleCreate,
+    StrategyRuleUpdate,
+    StrategyRuleResponse
+)
 from enum import Enum
 
 from app.services.db import database
