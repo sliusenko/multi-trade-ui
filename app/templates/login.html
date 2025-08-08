@@ -26,30 +26,38 @@
     <a class="register-link" href="/register.html">Register</a>
   </div>
 
-  <script>
-  document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(e.target).entries());
+<script>
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
 
-      const resp = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-      });
+    try {
+        const resp = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
 
-      const json = await resp.json();
+        const json = await resp.json();
 
-     if (resp.ok && json.access_token) {
-         localStorage.setItem("access_token", json.access_token);
+        if (resp.ok && json.access_token) {
+            localStorage.setItem("access_token", json.access_token);
 
-         if (json.expires_in) {
-             const expiresAt = Date.now() + json.expires_in * 1000;
-             localStorage.setItem("token_expires_at", expiresAt.toString());
-         }
+            if (json.expires_in) {
+                const expiresAt = Date.now() + json.expires_in * 1000;
+                localStorage.setItem("token_expires_at", expiresAt.toString());
+            }
 
-         window.location.href = '/strategy_dashboard';
-     }
-  });
-  </script>
+            window.location.href = '/strategy_dashboard';
+        } else {
+            // 👇 Вивести повідомлення про помилку
+            document.getElementById('error').textContent = json.detail || 'Login failed';
+        }
+    } catch (err) {
+        console.error('❌ Network error', err);
+        document.getElementById('error').textContent = 'Network error. Try again later.';
+    }
+});
+</script>
 </body>
 </html>
