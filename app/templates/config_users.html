@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Configuration</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="/static/js/auth_utils.js"></script>
+  <style>
+    body { background-color: #f0f2f5; padding: 20px; }
+    .tab-button { margin-right: 10px; }
+    .form-control { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>🔧 User Configuration</h3>
+  <button onclick="logout()" class="btn btn-outline-danger">Logout</button>
+</div>
+
+<!-- 🔽 Tab buttons -->
+<div class="mb-3">
+  <button class="btn btn-primary tab-button" onclick="showTab('users')">Users</button>
+  <button class="btn btn-outline-secondary tab-button" onclick="showTab('roles')">Roles</button>
+  <button class="btn btn-outline-secondary tab-button" onclick="showTab('permissions')">Permissions</button>
+</div>
+
+<!-- 🔽 Tab content container -->
+<div id="tab-content">
+  <!-- Users Table -->
+  <div id="users-tab">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5>👤 Users</h5>
+      <button class="btn btn-success" onclick="openAddUserForm()">+ Add User</button>
+    </div>
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="usersTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 🔽 User Form Modal -->
+<div class="modal" id="userModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userModalLabel">Add/Edit User</h5>
+        <button type="button" class="btn-close" onclick="closeUserModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="user_id">
+        <input type="text" id="username" class="form-control" placeholder="Username">
+        <input type="email" id="email" class="form-control" placeholder="Email">
+        <input type="text" id="role" class="form-control" placeholder="Role">
+        <input type="password" id="password" class="form-control" placeholder="Password">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveUser()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/users.js?v=1.0"></script>
+</body>
+</html>
