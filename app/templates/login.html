@@ -39,12 +39,16 @@
 
       const json = await resp.json();
 
-      if (resp.ok && json.access_token) {
-          localStorage.setItem("access_token", json.access_token);  // ✅ виправлено
-          window.location.href = '/strategy_dashboard';  // ✅ перенаправлення
-      } else {
-          document.getElementById('error').textContent = json.detail || "Invalid credentials";
-      }
+     if (resp.ok && json.access_token) {
+         localStorage.setItem("access_token", json.access_token);
+
+         if (json.expires_in) {
+             const expiresAt = Date.now() + json.expires_in * 1000;
+             localStorage.setItem("token_expires_at", expiresAt.toString());
+         }
+
+         window.location.href = '/strategy_dashboard';
+     }
   });
   </script>
 </body>
