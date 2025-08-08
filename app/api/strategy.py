@@ -6,7 +6,7 @@ from enum import Enum
 
 from app.services.db import database
 from app.models import strategy_rules
-from app.dependencies import get_current_user  # Повертає user_id з токена
+from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/strategy_rules", tags=["Strategy Rules"])
 

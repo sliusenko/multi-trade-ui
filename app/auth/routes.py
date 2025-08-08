@@ -3,8 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
 
 from app.models import users
-from app.auth.hashing import get_password_hash, verify_password
-from app.auth.jwt_handler import create_access_token
+from app.auth.jwt_handler import create_access_token, get_password_hash, verify_password
 from app.auth.dependencies import get_db
 from app.auth.schemas import RegisterRequest, LoginRequest
 
