@@ -109,3 +109,6 @@ async function loadRules() {
         tbody.appendChild(tr);
     });
 }
+
+document.getElementById('addBtn').addEventListener('click', addRule);
+window.addEventListener('DOMContentLoaded', loadRules);
