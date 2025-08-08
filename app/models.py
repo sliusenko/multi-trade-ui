@@ -1,4 +1,8 @@
-from sqlalchemy import Table, Column, Integer, String, Boolean, ForeignKey, BigInteger, MetaData, Float, MetaData, DateTime
+from sqlalchemy import (
+    Table, Column, Integer, String, Boolean, ForeignKey,
+    BigInteger, MetaData, Float, MetaData, DateTime,
+    UniqueConstraint
+)
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from datetime import datetime
 
@@ -61,4 +65,29 @@ strategy_weights = Table(
     Column("forecast_weight", Integer),
     Column("acceleration_weight", Integer),
     Column("trade_logic", String)
+)
+
+roles = Table(
+    "roles",
+    metadata,
+    Column("role_id", Integer, primary_key=True, index=True),
+    Column("name", String(50), unique=True, nullable=False),
+    Column("description", String(255), nullable=True),
+)
+
+permissions = Table(
+    "permissions",
+    metadata,
+    Column("permission_id", Integer, primary_key=True, index=True),
+    Column("name", String(50), unique=True, nullable=False),
+    Column("description", String(255), nullable=True),
+)
+
+role_permissions = Table(
+    "role_permissions",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("role_id", Integer, ForeignKey("roles.role_id", ondelete="CASCADE")),
+    Column("permission_id", Integer, ForeignKey("permissions.permission_id", ondelete="CASCADE")),
+    UniqueConstraint("role_id", "permission_id", name="uix_role_permission")  # Заборона дублікатів
 )
