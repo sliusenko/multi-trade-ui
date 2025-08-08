@@ -44,11 +44,7 @@ async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(g
     return user_config.UserOut(**row)
 
 @router.put("/{user_id}", response_model=user_config.UserOut)
-async def update_user(
-    user_id: int,
-    updated_data: user_config.UserUpdate,
-    db: AsyncSession = Depends(get_db),
-):
+async def update_user(user_id: int, updated_data: user_config.UserUpdate, db: AsyncSession = Depends(get_db),):
     """Оновити дані користувача"""
     update_data = updated_data.dict(exclude_unset=True)
 
