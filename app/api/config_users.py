@@ -7,6 +7,7 @@ from app.schemas import user_config
 from app.services.db import database
 from typing import Optional, List
 from app.dependencies import get_current_user
+from app.auth.jwt_handler import hash_password
 from app.models import users
 
 
@@ -20,11 +21,14 @@ async def get_users(current_user_id: int = Depends(get_current_user)):
     rows = await database.fetch_all(query)
     return [user_config.UserOut(**dict(row)) for row in rows]
 
-
 @router.post("/", response_model=user_config.UserOut)
 async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(get_db)):
     """Створити нового користувача"""
-    insert_query = models.users.insert().values(**user.dict())
+
+    user_data = user.dict()
+    password_hash = hash_password(user_data.pop("password"))  # забираємо plain password
+
+    insert_query = models.users.insert().values(**user_data, password_hash=password_hash)
     result = await db.execute(insert_query)
     await db.commit()
 
@@ -34,7 +38,6 @@ async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(g
     new_user = await db.execute(query)
     row = new_user.fetchone()
     return user_config.UserOut(**dict(row))
-
 
 @router.put("/{user_id}", response_model=user_config.UserOut)
 async def update_user(user_id: int, user: user_config.UserUpdate, db: AsyncSession = Depends(get_db)):
@@ -47,11 +50,16 @@ async def update_user(user_id: int, user: user_config.UserUpdate, db: AsyncSessi
 
     # 2. Оновлення
     update_data = user.dict(exclude_unset=True)
+
+    if "password" in update_data:
+        update_data["password_hash"] = hash_password(update_data.pop("password"))
+
     update_query = (
-        models.users.update()
-        .where(models.users.c.user_id == user_id)
+        users.update()
+        .where(users.c.user_id == user_id)
         .values(**update_data)
     )
+
     await db.execute(update_query)
     await db.commit()
 
