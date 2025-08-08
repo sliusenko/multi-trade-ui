@@ -24,22 +24,24 @@ async def get_users(current_user_id: int = Depends(get_current_user)):
 @router.post("/", response_model=user_config.UserOut)
 async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(get_db)):
     """Створити нового користувача"""
-
     user_data = user.dict()
-    password_hash = hash_password(user_data.pop("password"))  # забираємо plain password
+    password_hash = hash_password(user_data.pop("password"))  # Remove plain password
 
     insert_query = models.users.insert().values(**user_data, password_hash=password_hash)
     result = await db.execute(insert_query)
     await db.commit()
 
-    # Отримати нового користувача
     user_id = result.inserted_primary_key[0]
-    query = select(models.users).where(models.users.c.user_id == user_id)
-    new_user = await db.execute(query)
-    row = new_user.fetchone()
-    return user_config.UserOut(**dict(row))
 
-from app.auth.jwt_handler import hash_password
+    # Отримати нового користувача як dict
+    query = select(models.users).where(models.users.c.user_id == user_id)
+    result = await db.execute(query)
+    row = result.mappings().fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found after creation")
+
+    return user_config.UserOut(**row)
 
 @router.put("/{user_id}", response_model=user_config.UserOut)
 async def update_user(
@@ -48,10 +50,8 @@ async def update_user(
     db: AsyncSession = Depends(get_db),
 ):
     """Оновити дані користувача"""
-
     update_data = updated_data.dict(exclude_unset=True)
 
-    # Хешування пароля, якщо його передано
     if "password" in update_data:
         update_data["password_hash"] = hash_password(update_data.pop("password"))
 
@@ -65,26 +65,29 @@ async def update_user(
     await db.execute(update_query)
     await db.commit()
 
-    # Отримати оновленого користувача
+    # Повернути оновленого користувача
     query = select(models.users).where(models.users.c.user_id == user_id)
     result = await db.execute(query)
-    row = result.fetchone()
+    row = result.mappings().fetchone()
+
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
-    return user_config.UserOut(**dict(row))
+
+    return user_config.UserOut(**row)
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
     """Видалити користувача"""
     query = select(models.users).where(models.users.c.user_id == user_id)
     result = await db.execute(query)
-    user = result.fetchone()
-    if not user:
+    row = result.fetchone()
+
+    if not row:
         raise HTTPException(status_code=404, detail="User not found")
 
     delete_query = models.users.delete().where(models.users.c.user_id == user_id)
     await db.execute(delete_query)
     await db.commit()
 
-    return {"detail": "User deleted"}
+    return {"detail": f"User {user_id} deleted"}
 
