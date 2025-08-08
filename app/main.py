@@ -9,6 +9,7 @@ from app.services.db import database
 from app.api.strategy import router as strategy_router
 #from app.auth.routes import router as auth_router
 from app.auth import router as auth_router
+from app.api import config_users
 
 app = FastAPI()
 
@@ -19,6 +20,7 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # === Роутери ===
 app.include_router(auth_router, prefix="/api/auth")
 app.include_router(strategy_router)
+app.include_router(config_users.router)
 
 # === Middleware для сесій ===
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
