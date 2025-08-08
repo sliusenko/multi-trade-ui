@@ -24,7 +24,7 @@ async def get_users(current_user_id: int = Depends(get_current_user)):
 @router.post("/", response_model=user_config.UserOut)
 async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(get_db)):
     """Створити нового користувача"""
-    db_user = models.user(**user.dict())
+    db_user = models.users(**user.dict())
     db.add(db_user)
     await db.commit()
     await db.refresh(db_user)
@@ -34,7 +34,7 @@ async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(g
 @router.put("/{user_id}", response_model=user_config.UserOut)
 async def update_user(user_id: int, user: user_config.UserUpdate, db: AsyncSession = Depends(get_db)):
     """Оновити користувача"""
-    result = await db.execute(select(models.user).where(models.user.user_id == user_id))
+    result = await db.execute(select(models.users).where(models.users.user_id == user_id))
     db_user = result.scalars().first()
 
     if not db_user:
