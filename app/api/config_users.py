@@ -24,39 +24,52 @@ async def get_users(current_user_id: int = Depends(get_current_user)):
 @router.post("/", response_model=user_config.UserOut)
 async def create_user(user: user_config.UserCreate, db: AsyncSession = Depends(get_db)):
     """Створити нового користувача"""
-    db_user = models.users(**user.dict())
-    db.add(db_user)
+    insert_query = models.users.insert().values(**user.dict())
+    result = await db.execute(insert_query)
     await db.commit()
-    await db.refresh(db_user)
-    return db_user
+
+    # Отримати нового користувача
+    user_id = result.inserted_primary_key[0]
+    query = select(models.users).where(models.users.c.user_id == user_id)
+    new_user = await db.execute(query)
+    row = new_user.fetchone()
+    return user_config.UserOut(**dict(row))
 
 
 @router.put("/{user_id}", response_model=user_config.UserOut)
 async def update_user(user_id: int, user: user_config.UserUpdate, db: AsyncSession = Depends(get_db)):
-    """Оновити користувача"""
-    result = await db.execute(select(models.users).where(models.users.user_id == user_id))
-    db_user = result.scalars().first()
-
-    if not db_user:
+    # 1. Перевірка чи юзер існує
+    query = select(models.users).where(models.users.c.user_id == user_id)
+    existing_user = await db.fetch_one(query)
+    if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    for field, value in user.dict(exclude_unset=True).items():
-        setattr(db_user, field, value)
-
+    # 2. Оновлення
+    update_data = user.dict(exclude_unset=True)
+    update_query = (
+        models.users.update()
+        .where(models.users.c.user_id == user_id)
+        .values(**update_data)
+    )
+    await db.execute(update_query)
     await db.commit()
-    await db.refresh(db_user)
-    return db_user
 
+    # 3. Повернути оновлені дані
+    updated_user = await db.fetch_one(query)
+    return user_config.UserOut(**dict(updated_user))
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
     """Видалити користувача"""
-    result = await db.execute(select(models.User).where(models.User.user_id == user_id))
-    db_user = result.scalars().first()
-
-    if not db_user:
+    query = select(models.users).where(models.users.c.user_id == user_id)
+    result = await db.execute(query)
+    user = result.fetchone()
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    await db.delete(db_user)
+    delete_query = models.users.delete().where(models.users.c.user_id == user_id)
+    await db.execute(delete_query)
     await db.commit()
+
     return {"detail": "User deleted"}
+
