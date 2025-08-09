@@ -4,12 +4,14 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-
 from app.services.db import database
 from app.api.strategy import router as strategy_router
 #from app.auth.routes import router as auth_router
 from app.auth import router as auth_router
 from app.api import config_users
+from app.api.strategy_sets import router as sets_router
+from app.api.strategy_set_rules import router as set_rules_router
+from app.api.strategy_weights import router as weights_router
 
 app = FastAPI()
 
@@ -21,6 +23,9 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.include_router(auth_router, prefix="/api/auth")
 app.include_router(strategy_router)
 app.include_router(config_users.router)
+app.include_router(sets_router)
+app.include_router(set_rules_router)
+app.include_router(weights_router)
 
 # === Middleware для сесій ===
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
