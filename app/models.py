@@ -1,7 +1,7 @@
 from sqlalchemy import (
     Table, Column, Integer, String, Boolean, ForeignKey,
     BigInteger, MetaData, Float, MetaData, DateTime,
-    UniqueConstraint
+    UniqueConstraint, Text
 )
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from datetime import datetime
@@ -51,20 +51,37 @@ strategy_sets = Table(
     "strategy_sets",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("user_id", Integer),
-    Column("name", String)
+    Column("user_id", Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False),
+    Column("name", String(50), nullable=False),
+    Column("description", Text),
+    Column("active", Boolean, nullable=False, server_default=text("false")),
+    Column("created_at", DateTime, nullable=False, server_default=text("now()")),
+    Column("exchange", Text),
+    Column("pair", Text),
 )
 
+# --- strategy_set_rules ---
+strategy_set_rules = Table(
+    "strategy_set_rules",
+    metadata,
+    Column("set_id",  Integer, ForeignKey("strategy_sets.id", ondelete="CASCADE"), nullable=False),
+    Column("rule_id", Integer, ForeignKey("strategy_rules.id", ondelete="CASCADE"), nullable=False),
+    Column("enabled", Boolean, nullable=False, server_default=text("true")),
+    Column("override_priority", Integer),
+)
+
+# --- strategy_weights ---
 strategy_weights = Table(
     "strategy_weights",
     metadata,
-    Column("user_id", Integer, primary_key=True),
-    Column("exchange", String),
-    Column("pair", String),
-    Column("rsi_weight", Integer),
-    Column("forecast_weight", Integer),
-    Column("acceleration_weight", Integer),
-    Column("trade_logic", String)
+    Column("user_id", Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False),
+    Column("exchange", Text, nullable=False),
+    Column("pair", Text, nullable=False),
+    Column("rsi_weight",          Float,  server_default=text("1.0")),
+    Column("forecast_weight",     Float,  server_default=text("1.0")),
+    Column("acceleration_weight", Float,  server_default=text("1.0")),
+    Column("trade_logic", Text, server_default=text("'COMBINER'")),
+    Column("updated_at", DateTime, nullable=False, server_default=text("now()")),
 )
 
 roles = Table(
