@@ -323,6 +323,20 @@
          });
        }
 
+       // === Weights ===
+       const saveWeightsBtn = document.getElementById('saveWeightsBtn');
+       if (saveWeightsBtn) {
+         saveWeightsBtn.addEventListener('click', (e) => {
+           e.preventDefault(); e.stopPropagation();
+           if (typeof upsertWeights === 'function') {
+             console.log('[init] upsertWeights click');
+             upsertWeights();
+           } else {
+             console.error('upsertWeights is not a function');
+           }
+         });
+       }
+
        // Початкові завантаження
        try { if (typeof loadRules === 'function') loadRules(); } catch(e){ console.error('loadRules err', e); }
        try { if (typeof loadSets === 'function')  loadSets();  } catch(e){ console.error('loadSets err', e); }
