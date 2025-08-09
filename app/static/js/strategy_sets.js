@@ -10,6 +10,7 @@ async function apiFetch(url, options = {}) {
 }
 
 function sVal(id){ return document.getElementById(id)?.value?.trim() ?? ""; }
+
 function sBool(id){ return !!document.getElementById(id)?.checked; }
 
 function setPayloadFromForm() {
