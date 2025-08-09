@@ -1,116 +1,222 @@
+// /static/js/strategy.js
+
 async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem('access_token');
-    const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return fetch(url, { ...options, headers });
+  const token = localStorage.getItem('access_token');
+  const headers = options.headers || {};
+  headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
 }
 
-async function addRule() {
-    const getInputValue = (id) => document.getElementById(id).value.trim();
-    const param1Value = getInputValue('param_1');
-    const param2Value = getInputValue('param_2');
-    const priorityValue = getInputValue('priority');
+function val(id) { return document.getElementById(id)?.value?.trim() ?? ""; }
+function bool(id) { return !!document.getElementById(id)?.checked; }
 
-    const data = {
-        action: getInputValue('action'),
-        condition_type: getInputValue('condition_type'),
-        param_1: param1Value ? parseFloat(param1Value) : null,
-        param_2: param2Value ? parseFloat(param2Value) : null,
-        enabled: getInputValue('enabled') === 'true',
-        exchange: getInputValue('exchange'),
-        pair: getInputValue('pair'),
-        priority: priorityValue ? parseInt(priorityValue) : 0
-    };
-
-    const ruleId = document.getElementById('addBtn').dataset.ruleId;
-    const method = ruleId ? 'PUT' : 'POST';
-    const url = ruleId ? `/api/strategy_rules/${ruleId}` : '/api/strategy_rules';
-
-    const res = await apiFetch(url, {
-        method,
-        body: JSON.stringify(data)
-    });
-
-    if (res.ok) {
-        await loadRules();
-        clearForm();
-        document.getElementById('addBtn').textContent = 'Add'; // поверни назад
-        delete document.getElementById('addBtn').dataset.ruleId;
-    } else {
-        const errText = await res.text();
-        alert(`❌ Error ${method === 'POST' ? 'adding' : 'updating'} rule: ${res.status}\n${errText}`);
-    }
+function parsePriority(raw) {
+  if (raw === "" || raw === null || raw === undefined) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
-async function deleteRule(id) {
-    const res = await apiFetch(`/api/strategy_rules/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-        await loadRules();
-    } else {
-        alert('❌ Error deleting rule: ' + res.status);
-    }
-}
-
-function clearForm() {
-    document.querySelectorAll('.form-control').forEach(input => {
-        if (input.tagName === 'SELECT') {
-            input.selectedIndex = 0;
-        } else {
-            input.value = '';
-        }
-    });
-    document.getElementById('addBtn').textContent = 'Add';
-    delete document.getElementById('addBtn').dataset.ruleId;
-}
-
-function editRule(rule) {
-    document.getElementById('action').value = rule.action;
-    document.getElementById('condition_type').value = rule.condition_type;
-    document.getElementById('param_1').value = rule.param_1 ?? '';
-    document.getElementById('param_2').value = rule.param_2 ?? '';
-    document.getElementById('enabled').value = rule.enabled ? 'true' : 'false';
-    document.getElementById('exchange').value = rule.exchange;
-    document.getElementById('pair').value = rule.pair;
-    document.getElementById('priority').value = rule.priority ?? '';
-
-    // збережи ID для оновлення
-    document.getElementById('addBtn').dataset.ruleId = rule.id;
-    document.getElementById('addBtn').textContent = 'Update';
+function payloadFromForm() {
+  return {
+    action: val("action"),                          // "BUY" | "SELL"
+    condition_type: val("condition_type"),          // e.g. "RSI_ABOVE"
+    param_1: val("param_1") || null,
+    param_2: val("param_2") || null,
+    enabled: bool("enabled"),
+    exchange: val("exchange").toLowerCase() || null,
+    pair: val("pair").toUpperCase() || null,
+    priority: parsePriority(val("priority")),
+  };
 }
 
 async function loadRules() {
-    const res = await apiFetch('/api/strategy_rules');
-    if (!res.ok) {
-        alert('❌ Error loading rules: ' + res.status);
-        return;
+  const tbody = document.getElementById('rulesTable');
+  tbody.innerHTML = `<tr><td colspan="10">Loading…</td></tr>`;
+  try {
+    const res = await apiFetch('/api/strategy_rules', { method: 'GET' });
+    if (res.status === 401) {
+      tbody.innerHTML = `<tr><td colspan="10">401 Unauthorized — перевір токен</td></tr>`;
+      return;
     }
-
+    if (!res.ok) {
+      tbody.innerHTML = `<tr><td colspan="10">Error ${res.status}</td></tr>`;
+      return;
+    }
     const rules = await res.json();
-    const tbody = document.getElementById('rulesTable');
     tbody.innerHTML = '';
-
-    rules.forEach(rule => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${rule.id}</td>
-            <td>${rule.action}</td>
-            <td>${rule.condition_type}</td>
-            <td>${rule.param_1 ?? ''}</td>
-            <td>${rule.param_2 ?? ''}</td>
-            <td>${rule.enabled ? '✅' : '❌'}</td>
-            <td>${rule.exchange}</td>
-            <td>${rule.pair}</td>
-            <td>${rule.priority ?? 0}</td>
-            <td>
-                <button class="btn btn-warning btn-sm" onclick='editRule(${JSON.stringify(rule).replace(/'/g, "\\'")})'>Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteRule(${rule.id})">Delete</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+    rules.forEach(rule => tbody.appendChild(renderRuleRow(rule)));
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="10">Network error</td></tr>`;
+  }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  loadRules();
-  document.getElementById('addBtn').addEventListener('click', addRule);
-});
+function renderRuleRow(rule) {
+  const tr = document.createElement('tr');
+
+  const cells = [
+    rule.id,
+    rule.action,
+    rule.condition_type,
+    rule.param_1 ?? '',
+    rule.param_2 ?? '',
+    rule.enabled ? '✅' : '❌',
+    rule.exchange ?? '',
+    rule.pair ?? '',
+    rule.priority ?? '',
+  ].map(text => {
+    const td = document.createElement('td');
+    td.textContent = text;
+    return td;
+  });
+
+  const actionsTd = document.createElement('td');
+  actionsTd.innerHTML = `
+    <div class="btn-group btn-group-sm" role="group">
+      <button class="btn btn-primary" onclick="openEditRule(${rule.id})">Edit</button>
+      <button class="btn btn-warning" onclick="toggleEnabled(${rule.id}, ${!rule.enabled})">
+        ${rule.enabled ? 'Disable' : 'Enable'}
+      </button>
+      <button class="btn btn-danger" onclick="deleteRule(${rule.id})">Delete</button>
+    </div>
+  `;
+
+  cells.forEach(td => tr.appendChild(td));
+  tr.appendChild(actionsTd);
+  return tr;
+}
+
+async function addRule() {
+  const body = payloadFromForm();
+
+  // Мінімальна валідація, щоб не ловити 422
+  if (!body.action || !body.condition_type) {
+    alert('action і condition_type — обовʼязкові');
+    return;
+  }
+
+  try {
+    const res = await apiFetch('/api/strategy_rules', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+
+    if (res.status === 201 || res.ok) {
+      await loadRules();
+      return;
+    }
+
+    if (res.status === 307 || res.status === 308) {
+      // Несподіваний редірект: повтор без слеша/зі слешем не робимо — у нас і так без слеша.
+      console.warn('Redirect on POST, backend route може мати трейлінг слеш. Перевір FastAPI маршрут.');
+    }
+
+    const txt = await safeText(res);
+    alert(`Add failed: ${res.status}\n${txt}`);
+  } catch (e) {
+    console.error(e);
+    alert('Network error on add');
+  }
+}
+
+async function openEditRule(id) {
+  try {
+    const res = await apiFetch('/api/strategy_rules', { method: 'GET' });
+    if (!res.ok) { alert('Cannot load rules for edit'); return; }
+    const rules = await res.json();
+    const r = rules.find(x => x.id === id);
+    if (!r) { alert('Rule not found'); return; }
+
+    // Простий prompt-редактор. Якщо хочеш — зроблю модалку.
+    const action = prompt('Action (BUY/SELL):', r.action ?? '') ?? r.action;
+    const condition_type = prompt('Condition type:', r.condition_type ?? '') ?? r.condition_type;
+    const param_1 = prompt('Param1:', r.param_1 ?? '') ?? r.param_1;
+    const param_2 = prompt('Param2:', r.param_2 ?? '') ?? r.param_2;
+    const exchange = prompt('Exchange:', r.exchange ?? '') ?? r.exchange;
+    const pair = prompt('Pair:', r.pair ?? '') ?? r.pair;
+    const priorityStr = prompt('Priority (int or empty):', r.priority ?? '') ?? (r.priority ?? '');
+    const enabledStr = prompt('Enabled (true/false):', String(r.enabled)) ?? String(r.enabled);
+
+    const body = {
+      action: (action || '').trim(),
+      condition_type: (condition_type || '').trim(),
+      param_1: (param_1 || '').trim() || null,
+      param_2: (param_2 || '').trim() || null,
+      exchange: (exchange || '').trim().toLowerCase() || null,
+      pair: (pair || '').trim().toUpperCase() || null,
+      priority: priorityStr === '' ? null : parsePriority(priorityStr),
+      enabled: /^true$/i.test(enabledStr.trim()),
+    };
+
+    await updateRule(id, body);
+  } catch (e) {
+    console.error(e);
+    alert('Edit failed');
+  }
+}
+
+async function updateRule(id, body) {
+  try {
+    const res = await apiFetch(`/api/strategy_rules/${id}`, {
+      method: 'PUT', // якщо у тебе PATCH — заміни тут і на бекенді
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      await loadRules();
+      return;
+    }
+    const txt = await safeText(res);
+    alert(`Update failed: ${res.status}\n${txt}`);
+  } catch (e) {
+    console.error(e);
+    alert('Network error on update');
+  }
+}
+
+async function toggleEnabled(id, newVal) {
+  try {
+    const res = await apiFetch(`/api/strategy_rules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ enabled: !!newVal }),
+    });
+    if (res.ok) {
+      await loadRules();
+      return;
+    }
+    const txt = await safeText(res);
+    alert(`Toggle failed: ${res.status}\n${txt}`);
+  } catch (e) {
+    console.error(e);
+    alert('Network error on toggle');
+  }
+}
+
+async function deleteRule(id) {
+  if (!confirm(`Delete rule #${id}?`)) return;
+  try {
+    const res = await apiFetch(`/api/strategy_rules/${id}`, { method: 'DELETE' });
+    if (res.ok || res.status === 204) {
+      await loadRules();
+      return;
+    }
+    const txt = await safeText(res);
+    alert(`Delete failed: ${res.status}\n${txt}`);
+  } catch (e) {
+    console.error(e);
+    alert('Network error on delete');
+  }
+}
+
+async function safeText(res) {
+  try { return await res.text(); } catch { return ''; }
+}
+
+// Експортуємо в глобал
+window.loadRules = loadRules;
+window.addRule = addRule;
+window.openEditRule = openEditRule;
+window.updateRule = updateRule;
+window.toggleEnabled = toggleEnabled;
+window.deleteRule = deleteRule;
