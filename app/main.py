@@ -10,7 +10,7 @@ from app.auth import router as auth_router
 from app.api import config_users
 from app.api.strategy import router as strategy_router
 from app.api.strategy_sets import router as sets_router
-from app.api.strategy_set_rules import router as set_rules_router
+from app.api.strategy_set_rules import router as strategy_set_rules
 from app.api.strategy_weights import router as weights_router
 
 app = FastAPI()
@@ -24,7 +24,7 @@ app.include_router(auth_router, prefix="/api/auth")
 app.include_router(strategy_router)
 app.include_router(config_users.router)
 app.include_router(sets_router)
-app.include_router(set_rules_router)
+app.include_router(strategy_set_rules.router)
 app.include_router(weights_router)
 app.router.redirect_slashes = False
 

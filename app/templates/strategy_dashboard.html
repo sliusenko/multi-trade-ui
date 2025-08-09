@@ -257,6 +257,27 @@
        </div>
      </div>
    </div>
+  <!-- ===================== Sets and Rules ======================================= -->
+   <div class="card mt-3">
+  <div class="card-header d-flex align-items-center">
+    <strong>Rules in Set</strong>
+    <select id="setSelect" class="form-select ms-3" style="max-width:240px"></select>
+    <div class="ms-auto d-flex" style="gap:.5rem">
+      <select id="ruleSelect" class="form-select" style="max-width:260px"></select>
+      <input id="rulePriority" class="form-control" type="number" min="0" value="100" style="max-width:110px">
+      <button class="btn btn-primary" onclick="attachRule()">Attach</button>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead class="table-dark">
+        <tr><th>ID</th><th>Action</th><th>Condition</th><th>P1</th><th>P2</th>
+            <th>Priority</th><th>Enabled</th><th>Note</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="setRulesTbody"></tbody>
+    </table>
+  </div>
+</div>
   <!-- =============== Scripts =============== -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
