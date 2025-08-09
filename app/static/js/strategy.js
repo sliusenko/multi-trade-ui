@@ -1,4 +1,5 @@
-// /static/js/strategy.js
+// ===== strategy.js =====
+console.log('[strategy.js] loaded');
 
 async function apiFetch(url, options = {}) {
   const token = localStorage.getItem('access_token');
@@ -19,8 +20,8 @@ function parsePriority(raw) {
 
 function payloadFromForm() {
   return {
-    action: val("action"),                          // "BUY" | "SELL"
-    condition_type: val("condition_type"),          // e.g. "RSI_ABOVE"
+    action: val("action"),
+    condition_type: val("condition_type"),
     param_1: val("param_1") || null,
     param_2: val("param_2") || null,
     enabled: bool("enabled"),
@@ -35,10 +36,6 @@ async function loadRules() {
   tbody.innerHTML = `<tr><td colspan="10">Loading…</td></tr>`;
   try {
     const res = await apiFetch('/api/strategy_rules', { method: 'GET' });
-    if (res.status === 401) {
-      tbody.innerHTML = `<tr><td colspan="10">401 Unauthorized — перевір токен</td></tr>`;
-      return;
-    }
     if (!res.ok) {
       tbody.innerHTML = `<tr><td colspan="10">Error ${res.status}</td></tr>`;
       return;
@@ -74,106 +71,133 @@ function renderRuleRow(rule) {
   const actionsTd = document.createElement('td');
   actionsTd.innerHTML = `
     <div class="btn-group btn-group-sm" role="group">
-      <button class="btn btn-primary" onclick="openEditRule(${rule.id})">Edit</button>
-      <button class="btn btn-warning" onclick="toggleEnabled(${rule.id}, ${!rule.enabled})">
-        ${rule.enabled ? 'Disable' : 'Enable'}
-      </button>
-      <button class="btn btn-danger" onclick="deleteRule(${rule.id})">Delete</button>
+      <button class="btn btn-primary">Edit</button>
+      <button class="btn btn-warning">${rule.enabled ? 'Disable' : 'Enable'}</button>
+      <button class="btn btn-danger">Delete</button>
     </div>
   `;
+
+  // Прив'язуємо події
+  const [editBtn, toggleBtn, delBtn] = actionsTd.querySelectorAll('button');
+
+  editBtn.addEventListener('click', () => openEditRule(rule));
+  toggleBtn.addEventListener('click', () => toggleEnabled(rule.id, !rule.enabled));
+  delBtn.addEventListener('click', () => deleteRule(rule.id));
 
   cells.forEach(td => tr.appendChild(td));
   tr.appendChild(actionsTd);
   return tr;
 }
 
+// ====== Create ======
 async function addRule() {
+  console.log('[addRule] called');
   const body = payloadFromForm();
-  console.log('[addRule] body=', body);
+  console.log('[addRule] payload =', body);
+
+  if (!body.action || !body.condition_type) {
+    alert('action і condition_type — обовʼязкові');
+    return;
+  }
 
   let res = await apiFetch('/api/strategy_rules', {
     method: 'POST',
     body: JSON.stringify(body),
   });
-  console.log('[addRule] POST /api/strategy_rules status=', res.status, res.url);
+  console.log('[addRule] POST status=', res.status, res.url);
 
-  // fallback, якщо бекенд очікує слеш
-  if (res.status === 405 || res.status === 307 || res.status === 308) {
-    res = await apiFetch('/api/strategy_rules/', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
-    console.log('[addRule] POST /api/strategy_rules/ status=', res.status, res.url);
+  if (!res.ok && res.status !== 201) {
+    // fallback із трейлінг-слешем
+    if (res.status === 405 || res.status === 307 || res.status === 308) {
+      res = await apiFetch('/api/strategy_rules/', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      console.log('[addRule] POST / with slash status=', res.status);
+    }
   }
 
   if (!res.ok && res.status !== 201) {
     const txt = await safeText(res);
+    console.error('[addRule] failed', res.status, txt);
     alert(`Add failed: ${res.status}\n${txt}`);
     return;
   }
   await loadRules();
 }
 
-async function openEditRule(id) {
-  try {
-    const res = await apiFetch('/api/strategy_rules', { method: 'GET' });
-    if (!res.ok) { alert('Cannot load rules for edit'); return; }
-    const rules = await res.json();
-    const r = rules.find(x => x.id === id);
-    if (!r) { alert('Rule not found'); return; }
+// ====== Edit Modal ======
+function openEditRule(rule) {
+  window.__editRuleId__ = rule.id;
 
-    // Простий prompt-редактор. Якщо хочеш — зроблю модалку.
-    const action = prompt('Action (BUY/SELL):', r.action ?? '') ?? r.action;
-    const condition_type = prompt('Condition type:', r.condition_type ?? '') ?? r.condition_type;
-    const param_1 = prompt('Param1:', r.param_1 ?? '') ?? r.param_1;
-    const param_2 = prompt('Param2:', r.param_2 ?? '') ?? r.param_2;
-    const exchange = prompt('Exchange:', r.exchange ?? '') ?? r.exchange;
-    const pair = prompt('Pair:', r.pair ?? '') ?? r.pair;
-    const priorityStr = prompt('Priority (int or empty):', r.priority ?? '') ?? (r.priority ?? '');
-    const enabledStr = prompt('Enabled (true/false):', String(r.enabled)) ?? String(r.enabled);
+  document.getElementById('er_id').value = rule.id;
+  document.getElementById('er_action').value = rule.action ?? 'BUY';
+  document.getElementById('er_condition').value = rule.condition_type ?? '';
+  document.getElementById('er_p1').value = rule.param_1 ?? '';
+  document.getElementById('er_p2').value = rule.param_2 ?? '';
+  document.getElementById('er_exchange').value = rule.exchange ?? '';
+  document.getElementById('er_pair').value = rule.pair ?? '';
+  document.getElementById('er_priority').value = rule.priority ?? '';
+  document.getElementById('er_enabled').checked = !!rule.enabled;
 
-    const body = {
-      action: (action || '').trim(),
-      condition_type: (condition_type || '').trim(),
-      param_1: (param_1 || '').trim() || null,
-      param_2: (param_2 || '').trim() || null,
-      exchange: (exchange || '').trim().toLowerCase() || null,
-      pair: (pair || '').trim().toUpperCase() || null,
-      priority: priorityStr === '' ? null : parsePriority(priorityStr),
-      enabled: /^true$/i.test(enabledStr.trim()),
-    };
+  window.__gatherEditPayload__ = function() {
+    // відправляємо лише змінені (але можна й усі)
+    const payload = {};
+    const action = document.getElementById('er_action').value.trim();
+    const cond = document.getElementById('er_condition').value.trim();
+    const p1 = document.getElementById('er_p1').value.trim();
+    const p2 = document.getElementById('er_p2').value.trim();
+    const ex = document.getElementById('er_exchange').value.trim().toLowerCase();
+    const pair = document.getElementById('er_pair').value.trim().toUpperCase();
+    const prStr = document.getElementById('er_priority').value.trim();
+    const en = document.getElementById('er_enabled').checked;
 
-    await updateRule(id, body);
-  } catch (e) {
-    console.error(e);
-    alert('Edit failed');
-  }
+    if (action) payload.action = action;
+    if (cond) payload.condition_type = cond;
+    payload.param_1 = p1 || null;
+    payload.param_2 = p2 || null;
+    payload.exchange = ex || null;
+    payload.pair = pair || null;
+    payload.priority = prStr === '' ? null : parsePriority(prStr);
+    payload.enabled = !!en;
+
+    return payload;
+  };
+
+  const modalEl = document.getElementById('editRuleModal');
+  const modal = new bootstrap.Modal(modalEl);
+  modal.show();
 }
 
+// ====== Update ======
 async function updateRule(id, body) {
-  console.log('[updateRule] id=', id, 'body=', body);
+  console.log('[updateRule] called', id, body);
   let res = await apiFetch(`/api/strategy_rules/${id}`, {
     method: 'PUT',
     body: JSON.stringify(body),
   });
-  console.log('[updateRule] PUT no-slash status=', res.status, res.url);
+  console.log('[updateRule] PUT status=', res.status, res.url);
 
-  if (res.status === 405 || res.status === 307 || res.status === 308) {
-    res = await apiFetch(`/api/strategy_rules/${id}/`, {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    });
-    console.log('[updateRule] PUT with-slash status=', res.status, res.url);
+  if (!res.ok) {
+    if (res.status === 405 || res.status === 307 || res.status === 308) {
+      res = await apiFetch(`/api/strategy_rules/${id}/`, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+      console.log('[updateRule] PUT / with slash status=', res.status);
+    }
   }
 
   if (!res.ok) {
     const txt = await safeText(res);
+    console.error('[updateRule] failed', res.status, txt);
     alert(`Update failed: ${res.status}\n${txt}`);
     return;
   }
   await loadRules();
 }
 
+// ====== Toggle ======
 async function toggleEnabled(id, newVal) {
   try {
     const res = await apiFetch(`/api/strategy_rules/${id}`, {
@@ -192,6 +216,7 @@ async function toggleEnabled(id, newVal) {
   }
 }
 
+// ====== Delete ======
 async function deleteRule(id) {
   if (!confirm(`Delete rule #${id}?`)) return;
   try {
@@ -212,14 +237,10 @@ async function safeText(res) {
   try { return await res.text(); } catch { return ''; }
 }
 
-// Експортуємо в глобал
+// Експортуємо у глобал (не обов’язково, але хай буде)
 window.loadRules = loadRules;
 window.addRule = addRule;
-window.openEditRule = openEditRule;
 window.updateRule = updateRule;
 window.toggleEnabled = toggleEnabled;
 window.deleteRule = deleteRule;
-
-
-
-
+window.openEditRule = openEditRule;
