@@ -89,35 +89,29 @@ function renderRuleRow(rule) {
 
 async function addRule() {
   const body = payloadFromForm();
+  console.log('[addRule] body=', body);
 
-  // Мінімальна валідація, щоб не ловити 422
-  if (!body.action || !body.condition_type) {
-    alert('action і condition_type — обовʼязкові');
-    return;
-  }
+  let res = await apiFetch('/api/strategy_rules', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  console.log('[addRule] POST /api/strategy_rules status=', res.status, res.url);
 
-  try {
-    const res = await apiFetch('/api/strategy_rules', {
+  // fallback, якщо бекенд очікує слеш
+  if (res.status === 405 || res.status === 307 || res.status === 308) {
+    res = await apiFetch('/api/strategy_rules/', {
       method: 'POST',
       body: JSON.stringify(body),
     });
+    console.log('[addRule] POST /api/strategy_rules/ status=', res.status, res.url);
+  }
 
-    if (res.status === 201 || res.ok) {
-      await loadRules();
-      return;
-    }
-
-    if (res.status === 307 || res.status === 308) {
-      // Несподіваний редірект: повтор без слеша/зі слешем не робимо — у нас і так без слеша.
-      console.warn('Redirect on POST, backend route може мати трейлінг слеш. Перевір FastAPI маршрут.');
-    }
-
+  if (!res.ok && res.status !== 201) {
     const txt = await safeText(res);
     alert(`Add failed: ${res.status}\n${txt}`);
-  } catch (e) {
-    console.error(e);
-    alert('Network error on add');
+    return;
   }
+  await loadRules();
 }
 
 async function openEditRule(id) {
@@ -157,22 +151,27 @@ async function openEditRule(id) {
 }
 
 async function updateRule(id, body) {
-  try {
-    const res = await apiFetch(`/api/strategy_rules/${id}`, {
-      method: 'PUT', // якщо у тебе PATCH — заміни тут і на бекенді
+  console.log('[updateRule] id=', id, 'body=', body);
+  let res = await apiFetch(`/api/strategy_rules/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+  console.log('[updateRule] PUT no-slash status=', res.status, res.url);
+
+  if (res.status === 405 || res.status === 307 || res.status === 308) {
+    res = await apiFetch(`/api/strategy_rules/${id}/`, {
+      method: 'PUT',
       body: JSON.stringify(body),
     });
+    console.log('[updateRule] PUT with-slash status=', res.status, res.url);
+  }
 
-    if (res.ok) {
-      await loadRules();
-      return;
-    }
+  if (!res.ok) {
     const txt = await safeText(res);
     alert(`Update failed: ${res.status}\n${txt}`);
-  } catch (e) {
-    console.error(e);
-    alert('Network error on update');
+    return;
   }
+  await loadRules();
 }
 
 async function toggleEnabled(id, newVal) {
@@ -220,3 +219,7 @@ window.openEditRule = openEditRule;
 window.updateRule = updateRule;
 window.toggleEnabled = toggleEnabled;
 window.deleteRule = deleteRule;
+
+
+
+
