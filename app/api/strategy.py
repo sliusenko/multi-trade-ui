@@ -1,88 +1,50 @@
+# app/api/strategy.py
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
-from sqlalchemy import select
-from typing import Optional, List
-from app.schemas.strategy import (
-    StrategyRuleCreate,
-    StrategyRuleUpdate,
-    StrategyRuleResponse
-)
-from enum import Enum
-
+from typing import List, Optional
+from app.schemas.strategy import StrategyRuleCreate, StrategyRuleUpdate, StrategyRuleResponse
+from app.dependencies import get_current_user
+from sqlalchemy import select, update, delete
 from app.services.db import database
 from app.models import strategy_rules
-from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/strategy_rules", tags=["Strategy Rules"])
 
-# ===== Routes =====
+# ---- GET (list) ----
 @router.get("", response_model=List[StrategyRuleResponse])
+@router.get("/", response_model=List[StrategyRuleResponse])
 async def get_rules(current_user_id: int = Depends(get_current_user)):
-    """Отримати всі правила користувача"""
-    query = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
-    rows = await database.fetch_all(query)
-    return [StrategyRuleResponse(**dict(row)) for row in rows]
+    q = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
+    rows = await database.fetch_all(q)
+    return [StrategyRuleResponse(**dict(r)) for r in rows]
 
-
+# ---- POST (create) ----
 @router.post("", response_model=StrategyRuleResponse, status_code=status.HTTP_201_CREATED)
-async def create_rule(
-    rule: StrategyRuleCreate,
-    current_user_id: int = Depends(get_current_user)
-):
-    """Створити нове правило (авторизація обов'язкова)"""
-    if not current_user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+@router.post("/", response_model=StrategyRuleResponse, status_code=status.HTTP_201_CREATED)
+async def create_rule(rule: StrategyRuleCreate, current_user_id: int = Depends(get_current_user)):
+    data = rule.dict()
+    data["user_id"] = current_user_id
+    inserted_id = await database.execute(strategy_rules.insert().values(**data))
+    row = await database.fetch_one(select(strategy_rules).where(strategy_rules.c.id == inserted_id))
+    return StrategyRuleResponse(**dict(row))
 
-    query = strategy_rules.insert().values(
-        user_id=current_user_id,
-        action=rule.action,
-        condition_type=rule.condition_type,
-        param_1=rule.param_1,
-        param_2=rule.param_2,
-        enabled=rule.enabled,
-        exchange=rule.exchange,
-        pair=rule.pair,
-        priority=rule.priority
-    )
-    new_id = await database.execute(query)
-    return StrategyRuleResponse(id=new_id, user_id=current_user_id, **rule.dict())
-
-
+# ---- PUT/PATCH (update) ----
 @router.put("/{rule_id}", response_model=StrategyRuleResponse)
-async def update_rule(
-    rule_id: int,
-    rule: StrategyRuleUpdate,
-    current_user_id: int = Depends(get_current_user)
-):
-    """Оновити правило (тільки для власника)"""
-    query_check = select(strategy_rules).where(
-        (strategy_rules.c.id == rule_id) &
-        (strategy_rules.c.user_id == current_user_id)
+@router.patch("/{rule_id}", response_model=StrategyRuleResponse)
+async def update_rule(rule_id: int, rule: StrategyRuleUpdate, current_user_id: int = Depends(get_current_user)):
+    values = {k: v for k, v in rule.dict(exclude_unset=True).items()}
+    res = await database.execute(
+        update(strategy_rules)
+        .where(strategy_rules.c.id == rule_id, strategy_rules.c.user_id == current_user_id)
+        .values(**values)
     )
-    db_rule = await database.fetch_one(query_check)
-    if not db_rule:
+    row = await database.fetch_one(select(strategy_rules).where(strategy_rules.c.id == rule_id))
+    if not row:
         raise HTTPException(status_code=404, detail="Rule not found")
+    return StrategyRuleResponse(**dict(row))
 
-    query = (
-        strategy_rules.update()
-        .where(strategy_rules.c.id == rule_id)
-        .values(**rule.dict())
-    )
-    await database.execute(query)
-    return StrategyRuleResponse(id=rule_id, user_id=current_user_id, **rule.dict())
-
-
-@router.delete("/{rule_id}", response_model=dict)
+# ---- DELETE ----
+@router.delete("/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_rule(rule_id: int, current_user_id: int = Depends(get_current_user)):
-    """Видалити правило (тільки для власника)"""
-    query_check = select(strategy_rules).where(
-        (strategy_rules.c.id == rule_id) &
-        (strategy_rules.c.user_id == current_user_id)
+    await database.execute(
+        delete(strategy_rules).where(strategy_rules.c.id == rule_id, strategy_rules.c.user_id == current_user_id)
     )
-    db_rule = await database.fetch_one(query_check)
-    if not db_rule:
-        raise HTTPException(status_code=404, detail="Rule not found or access denied")
-
-    query = strategy_rules.delete().where(strategy_rules.c.id == rule_id)
-    await database.execute(query)
-    return {"status": "deleted", "id": rule_id}

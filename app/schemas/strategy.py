@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
-from typing import Optional, List
+from typing import Optional, List, Literal
 from enum import Enum
 
-from app.services.db import database
-from app.models import strategy_rules
-from app.dependencies import get_current_user
+Action = Literal["BUY", "SELL"]
 
 # ===== Enums =====
 class ActionEnum(str, Enum):
@@ -21,24 +19,21 @@ class ConditionTypeEnum(str, Enum):
 
 # ===== Schemas =====
 class StrategyRuleBase(BaseModel):
-    action: ActionEnum
-    condition_type: ConditionTypeEnum
-    param_1: Optional[float] = None
-    param_2: Optional[float] = None
-    enabled: bool
-    exchange: str
-    pair: str
+    action: Optional[Action] = None
+    condition_type: Optional[str] = None
+    param_1: Optional[str] = None
+    param_2: Optional[str] = None
+    enabled: Optional[bool] = None
+    exchange: Optional[str] = None
+    pair: Optional[str] = None
     priority: Optional[int] = None
 
 class StrategyRuleCreate(StrategyRuleBase):
-    pass
+    action: Action
+    condition_type: str
 
 class StrategyRuleUpdate(StrategyRuleBase):
     pass
 
 class StrategyRuleResponse(StrategyRuleBase):
     id: int
-    user_id: int
-
-    class Config:
-        orm_mode = True
