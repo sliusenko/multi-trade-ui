@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
-from typing import Optional, List
+from typing import Optional, List, Literal
 from enum import Enum
 
 from app.services.db import database
@@ -36,9 +36,21 @@ class StrategyRuleCreate(StrategyRuleBase):
 class StrategyRuleUpdate(StrategyRuleBase):
     pass
 
-class StrategyRuleResponse(StrategyRuleBase):
-    id: int
-    user_id: int
+Action = Literal["BUY", "SELL"]
 
-    class Config:
-        orm_mode = True
+class StrategyRuleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)  # замість orm_mode в Pydantic v2
+
+    id: int
+    action: Action
+    # було: condition_type: Literal["RSI_ABOVE", "RSI_BELOW"]
+    # стало: просто рядок, щоб підтримати всі наші нові типи:
+    condition_type: str
+
+    # якщо типи параметрів плавають — залиш прості Optional:
+    param_1: Optional[str] = None
+    param_2: Optional[str] = None
+    enabled: bool
+    exchange: Optional[str] = None
+    pair: Optional[str] = None
+    priority: Optional[int] = None

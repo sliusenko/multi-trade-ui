@@ -72,6 +72,8 @@ async def strategy_dashboard(request: Request):
 @app.get("/api/strategy_rules")
 async def get_rules():
     return rules
+    rows = await database.fetch_all(query)  # якщо це databases, ок; якщо SA Row -> дивись нижче
+    return [StrategyRuleResponse.model_validate(r) for r in rows]
 
 @app.get("/config_users")
 def config_users_page(request: Request):
