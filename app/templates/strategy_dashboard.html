@@ -1,186 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Strategy Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Bootstrap 5 -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="/static/js/auth_utils.js"></script>
   <style>
     body { background-color: #f8f9fa; padding: 20px; }
     .table-dark th { text-align: center; }
-    .form-control, .form-select { margin-right: 5px; }
-    .gap-2 > * { margin-right: .5rem; }
+    .form-control { margin-right: 5px; }
   </style>
 </head>
 <body>
 
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">Strategy Dashboard</h3>
-    <a class="btn btn-outline-danger" href="/logout">Logout</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Strategy Dashboard</h3>
+  <button onclick="logout()" class="btn btn-outline-danger">Logout</button>
+</div>
+
+<div class="mb-3 p-3 border rounded bg-white">
+  <h5>Add New Rule</h5>
+  <div class="d-flex flex-wrap gap-2">
+    <select id="action" class="form-control">
+      <option value="BUY">BUY</option>
+      <option value="SELL">SELL</option>
+    </select>
+    <input id="condition_type" class="form-control" placeholder="Condition Type (e.g., RSI_ABOVE)">
+    <input id="param_1" class="form-control" placeholder="Param1">
+    <input id="param_2" class="form-control" placeholder="Param2">
+    <select id="enabled" class="form-control">
+      <option value="true">Enabled</option>
+      <option value="false">Disabled</option>
+    </select>
+    <input id="exchange" class="form-control" placeholder="Exchange (e.g., binance)">
+    <input id="pair" class="form-control" placeholder="Pair (e.g., BTCUSDT)">
+    <input id="priority" class="form-control" placeholder="Priority">
+    <button id="addBtn" class="btn btn-success">Add</button>
   </div>
+</div>
 
-  <!-- ===================== Strategy Rules (existing) ===================== -->
-  <h4 class="mb-2">Strategy Rules</h4>
-  <div class="mb-3 p-3 border rounded bg-white">
-    <div class="d-flex flex-wrap">
-      <select id="action" class="form-select" style="max-width:160px">
-        <option value="BUY">BUY</option>
-        <option value="SELL">SELL</option>
-      </select>
-
-      <input id="condition_type" class="form-control" placeholder="Condition Type (e.g., RSI_ABOVE)">
-      <input id="param_1" class="form-control" placeholder="Param1">
-      <input id="param_2" class="form-control" placeholder="Param2">
-
-      <div class="form-check align-self-center ms-2 me-2">
-        <input class="form-check-input" type="checkbox" id="enabled" checked>
-        <label class="form-check-label" for="enabled">Enabled</label>
-      </div>
-
-      <input id="exchange" class="form-control" placeholder="Exchange (e.g., binance)">
-      <input id="pair" class="form-control" placeholder="Pair (e.g., BTCUSDT)">
-      <input id="priority" type="number" class="form-control" placeholder="Priority" style="max-width:140px">
-
-      <button class="btn btn-success" onclick="addRule()">Add</button>
-    </div>
-  </div>
-
-  <table class="table table-striped table-hover table-bordered">
-    <thead class="table-dark">
-      <tr>
-        <th>ID</th>
-        <th>Action</th>
-        <th>Condition</th>
-        <th>Param1</th>
-        <th>Param2</th>
-        <th>Enabled</th>
-        <th>Exchange</th>
-        <th>Pair</th>
-        <th>Priority</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="rulesTable"></tbody>
-  </table>
-
-  <hr class="my-4">
-
-  <!-- ===================== Strategy Sets ===================== -->
-  <h4 class="mb-2">Strategy Sets</h4>
-  <div class="mb-3 p-3 border rounded bg-white">
-    <div class="d-flex flex-wrap gap-2">
-      <input id="set_name" class="form-control" placeholder="Set name (e.g., Default Binance)">
-      <input id="set_desc" class="form-control" placeholder="Description">
-      <input id="set_exchange" class="form-control" placeholder="Exchange (optional)">
-      <input id="set_pair" class="form-control" placeholder="Pair (optional)">
-      <div class="form-check align-self-center ms-2">
-        <input class="form-check-input" type="checkbox" id="set_active">
-        <label class="form-check-label" for="set_active">Active</label>
-      </div>
-      <button class="btn btn-success" onclick="addSet()">Add Set</button>
-    </div>
-  </div>
-
-  <table class="table table-striped table-hover table-bordered">
-    <thead class="table-dark">
-      <tr>
-        <th>ID</th><th>Name</th><th>Active</th><th>Exchange</th><th>Pair</th><th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="setsTable"></tbody>
-  </table>
-
-  <!-- Manage Set Rules Modal -->
-  <div class="modal fade" id="manageSetRulesModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Manage Set Rules</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <h6>All Rules</h6>
-              <div id="allRulesList" class="list-group" style="max-height:400px; overflow:auto;"></div>
-            </div>
-            <div class="col-md-6">
-              <h6>Rules in Set</h6>
-              <div id="setRulesList" class="list-group" style="max-height:400px; overflow:auto;"></div>
-            </div>
-          </div>
-          <small class="text-muted d-block mt-2">Праворуч можна увімкнути/вимкнути правило і задати локальний пріоритет.</small>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <hr class="my-4">
-
-  <!-- ===================== Strategy Weights ===================== -->
-  <h4 class="mb-2">Strategy Weights</h4>
-  <div class="mb-3 p-3 border rounded bg-white">
-    <div class="d-flex flex-wrap gap-2">
-      <input id="w_exchange" class="form-control" placeholder="Exchange (e.g., binance)">
-      <input id="w_pair" class="form-control" placeholder="Pair (e.g., BTCUSDT)">
-      <input id="w_rsi" type="number" step="0.1" class="form-control" placeholder="RSI weight" value="1.0" style="max-width:160px">
-      <input id="w_forecast" type="number" step="0.1" class="form-control" placeholder="Forecast weight" value="1.0" style="max-width:180px">
-      <input id="w_accel" type="number" step="0.1" class="form-control" placeholder="Acceleration weight" value="1.0" style="max-width:200px">
-      <select id="w_logic" class="form-select" style="max-width:180px">
-        <option value="COMBINER">COMBINER</option>
-        <option value="THRESHOLD">THRESHOLD</option>
-        <option value="VOTE">VOTE</option>
-      </select>
-      <button class="btn btn-success" onclick="upsertWeights()">Save</button>
-    </div>
-  </div>
-
-  <table class="table table-striped table-hover table-bordered">
-    <thead class="table-dark">
-      <tr>
-        <th>Exchange</th><th>Pair</th><th>RSI</th><th>Forecast</th><th>Accel</th><th>Logic</th><th>Updated</th><th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="weightsTable"></tbody>
-  </table>
-
-  <!-- =============== Scripts =============== -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- apiFetch helper (якщо в тебе вже є спільний файл - заміни/забери цей блок) -->
-  <script>
-    async function apiFetch(url, options = {}) {
-      const token = localStorage.getItem('access_token');
-      const headers = options.headers || {};
-      headers['Content-Type'] = 'application/json';
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      return fetch(url, { ...options, headers });
-    }
-    function escapeHtml(s){return (s??'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]))}
-  </script>
-
-  <!-- Твій існуючий JS для правил (якщо зберігаєш його окремо) -->
-  <script src="/static/js/strategy.js"></script>
-
-  <!-- Нові модулі -->
-  <script src="/static/js/strategy_sets.js"></script>
-  <script src="/static/js/strategy_weights.js"></script>
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      console.log('[init] DOM ready');
-      try { if (typeof loadRules === 'function') { console.log('[init] loadRules'); loadRules(); } } catch(e){ console.error('loadRules err', e); }
-      try { if (typeof loadSets === 'function')  { console.log('[init] loadSets');  loadSets();  } } catch(e){ console.error('loadSets err', e); }
-      try { if (typeof loadWeights === 'function'){ console.log('[init] loadWeights'); loadWeights(); } } catch(e){ console.error('loadWeights err', e); }
-    });
-  </script>
-</body>
-</html>
+<table class="table table-bordered table-striped">
+  <thead class="table-dark">
+    <tr>
+      <th>ID</th>
+      <th>Action</th>
+      <th>Condition</th>
+      <th>Param1</th>
+      <th>Param2</th>
+      <th>Enabled</th>
+      <th>Exchange</th>
+      <th>Pair</th>
+      <th>Priority</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="rulesTable"></tbody>
+</table>
