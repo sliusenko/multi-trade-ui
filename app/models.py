@@ -60,9 +60,9 @@ strategy_sets = Table(
     Column("pair", Text),
 )
 
-# --- strategy_set_rules ---
+# --- strategy_sets_rules ---
 strategy_sets_rules = Table(
-    "strategy_set_rules",
+    "strategy_sets_rules",
     metadata,
     Column("set_id", Integer, ForeignKey("strategy_sets.id", ondelete="CASCADE"), nullable=False),
     Column("rule_id", Integer, ForeignKey("strategy_rules.id", ondelete="CASCADE"), nullable=False),
