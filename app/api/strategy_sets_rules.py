@@ -2,34 +2,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import List, Optional
-
+from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate
 from app.services.db import database
 from app.models import strategy_sets_rules, strategy_rules, strategy_sets
 from app.dependencies import get_current_user
 from sqlalchemy import select, insert, update, delete
 
 router = APIRouter(prefix="/api/strategy_sets", tags=["Strategy Set Rules"])
-
-class SetRuleCreate(BaseModel):
-    rule_id: int
-    enabled: bool = True
-    priority: int = Field(ge=0, default=100)
-#    note: Optional[str] = None
-
-class SetRuleUpdate(BaseModel):
-    enabled: Optional[bool] = None
-    priority: Optional[int] = Field(None, ge=0)
-#    note: Optional[str] = None
-
-class SetRuleItem(BaseModel):
-    rule_id: int
-    action: str
-    condition_type: str
-    param_1: Optional[int]
-    param_2: Optional[int]
-    enabled: bool
-    priority: int
-#    note: Optional[str]
 
 @router.get("/{set_id}/rules", response_model=List[SetRuleItem])
 async def list_set_rules(set_id: int, uid: int = Depends(get_current_user)):
