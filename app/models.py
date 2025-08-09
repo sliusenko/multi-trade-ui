@@ -61,22 +61,15 @@ strategy_sets = Table(
 )
 
 # --- strategy_set_rules ---
-strategy_set_rules = Table(
+strategy_sets_rules = Table(
     "strategy_set_rules",
     metadata,
-    Column("set_id", Integer,
-           ForeignKey("strategy_sets.id", ondelete="CASCADE"),
-           nullable=False),
-    Column("rule_id", Integer,
-           ForeignKey("strategy_rules.id", ondelete="CASCADE"),
-           nullable=False),
-    Column("enabled", Boolean, nullable=False,
-           server_default=text("true")),
+    Column("set_id", Integer, ForeignKey("strategy_sets.id", ondelete="CASCADE"), nullable=False),
+    Column("rule_id", Integer, ForeignKey("strategy_rules.id", ondelete="CASCADE"), nullable=False),
+    Column("enabled", Boolean, nullable=False, server_default=text("true")),
     Column("override_priority", Integer),
     Column("user_id", BigInteger, nullable=False),
-    Column("priority", Integer, nullable=False,
-           server_default=text("100")),
-    Column("note", Text),
+    Column("priority", Integer, nullable=False, server_default=text("100")),
 )
 
 # --- strategy_weights ---

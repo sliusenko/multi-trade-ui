@@ -1,10 +1,10 @@
-# app/routers/strategy_set_rules.py
+# app/routers/strategy_sets_rules.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
 from app.services.db import database
-from app.models import strategy_set_rules, strategy_rules, strategy_sets
+from app.models import strategy_sets_rules, strategy_rules, strategy_sets
 from app.dependencies import get_current_user
 from sqlalchemy import select, insert, update, delete
 
@@ -14,12 +14,12 @@ class SetRuleCreate(BaseModel):
     rule_id: int
     enabled: bool = True
     priority: int = Field(ge=0, default=100)
-    note: Optional[str] = None
+#    note: Optional[str] = None
 
 class SetRuleUpdate(BaseModel):
     enabled: Optional[bool] = None
     priority: Optional[int] = Field(None, ge=0)
-    note: Optional[str] = None
+#    note: Optional[str] = None
 
 class SetRuleItem(BaseModel):
     rule_id: int
@@ -29,7 +29,7 @@ class SetRuleItem(BaseModel):
     param_2: Optional[int]
     enabled: bool
     priority: int
-    note: Optional[str]
+#    note: Optional[str]
 
 @router.get("/{set_id}/rules", response_model=List[SetRuleItem])
 async def list_set_rules(set_id: int, uid: int = Depends(get_current_user)):
@@ -42,23 +42,23 @@ async def list_set_rules(set_id: int, uid: int = Depends(get_current_user)):
 
     q = (
         select(
-            strategy_set_rules.c.rule_id,
+            strategy_sets_rules.c.rule_id,
             strategy_rules.c.action,
             strategy_rules.c.condition_type,
             strategy_rules.c.param_1,
             strategy_rules.c.param_2,
-            strategy_set_rules.c.enabled,
-            strategy_set_rules.c.priority,
-            strategy_set_rules.c.note,
+            strategy_sets_rules.c.enabled,
+            strategy_sets_rules.c.priority,
+#            strategy_sets_rules.c.note,
         )
-        .select_from(strategy_set_rules.join(
-            strategy_rules, strategy_rules.c.id == strategy_set_rules.c.rule_id
+        .select_from(strategy_sets_rules.join(
+            strategy_rules, strategy_rules.c.id == strategy_sets_rules.c.rule_id
         ))
         .where(
-            strategy_set_rules.c.user_id == uid,
-            strategy_set_rules.c.set_id == set_id,
+            strategy_sets_rules.c.user_id == uid,
+            strategy_sets_rules.c.set_id == set_id,
         )
-        .order_by(strategy_set_rules.c.priority, strategy_rules.c.id)
+        .order_by(strategy_sets_rules.c.priority, strategy_rules.c.id)
     )
     rows = await database.fetch_all(q)
     return [SetRuleItem(**dict(r)) for r in rows]
@@ -81,26 +81,26 @@ async def add_set_rule(set_id: int, body: SetRuleCreate, uid: int = Depends(get_
 
     # унікальність у межах (user,set,rule)
     exists = await database.fetch_one(
-        select(strategy_set_rules.c.rule_id).where(
-            strategy_set_rules.c.user_id == uid,
-            strategy_set_rules.c.set_id == set_id,
-            strategy_set_rules.c.rule_id == body.rule_id,
+        select(strategy_sets_rules.c.rule_id).where(
+            strategy_sets_rules.c.user_id == uid,
+            strategy_sets_rules.c.set_id == set_id,
+            strategy_sets_rules.c.rule_id == body.rule_id,
         )
     )
     if exists:
         raise HTTPException(409, "Rule already attached to this set")
 
     ins = (
-        insert(strategy_set_rules)
+        insert(strategy_sets_rules)
         .values(
             user_id=uid,
             set_id=set_id,
             rule_id=body.rule_id,
             enabled=body.enabled,
             priority=body.priority,
-            note=body.note,
+#            note=body.note,
         )
-        .returning(strategy_set_rules.c.rule_id)
+        .returning(strategy_sets_rules.c.rule_id)
     )
     await database.execute(ins)
     # повернемо повний рядок через list_set_rules
@@ -110,11 +110,11 @@ async def add_set_rule(set_id: int, body: SetRuleCreate, uid: int = Depends(get_
 @router.patch("/{set_id}/rules/{rule_id}", response_model=SetRuleItem)
 async def update_set_rule(set_id: int, rule_id: int, body: SetRuleUpdate, uid: int = Depends(get_current_user)):
     upd = (
-        update(strategy_set_rules)
+        update(strategy_sets_rules)
         .where(
-            strategy_set_rules.c.user_id == uid,
-            strategy_set_rules.c.set_id == set_id,
-            strategy_set_rules.c.rule_id == rule_id,
+            strategy_sets_rules.c.user_id == uid,
+            strategy_sets_rules.c.set_id == set_id,
+            strategy_sets_rules.c.rule_id == rule_id,
         )
         .values({k: v for k, v in body.dict(exclude_unset=True).items()})
     )
@@ -134,11 +134,11 @@ async def reorder_rules(set_id: int, payload: ReorderPayload, uid: int = Depends
     async with database.transaction():
         for rid, pr in prio_map.items():
             await database.execute(
-                update(strategy_set_rules)
+                update(strategy_sets_rules)
                 .where(
-                    strategy_set_rules.c.user_id == uid,
-                    strategy_set_rules.c.set_id == set_id,
-                    strategy_set_rules.c.rule_id == rid,
+                    strategy_sets_rules.c.user_id == uid,
+                    strategy_sets_rules.c.set_id == set_id,
+                    strategy_sets_rules.c.rule_id == rid,
                 )
                 .values(priority=pr)
             )
@@ -146,9 +146,9 @@ async def reorder_rules(set_id: int, payload: ReorderPayload, uid: int = Depends
 
 @router.delete("/{set_id}/rules/{rule_id}", status_code=204)
 async def detach_rule(set_id: int, rule_id: int, uid: int = Depends(get_current_user)):
-    delq = delete(strategy_set_rules).where(
-        strategy_set_rules.c.user_id == uid,
-        strategy_set_rules.c.set_id == set_id,
-        strategy_set_rules.c.rule_id == rule_id,
+    delq = delete(strategy_sets_rules).where(
+        strategy_sets_rules.c.user_id == uid,
+        strategy_sets_rules.c.set_id == set_id,
+        strategy_sets_rules.c.rule_id == rule_id,
     )
     await database.execute(delq)

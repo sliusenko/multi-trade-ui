@@ -77,7 +77,6 @@ async function loadRulesForSelectedSet() {
             onchange="updatePriority(${setId}, ${it.rule_id}, this.value)"></td>
       <td><input type="checkbox" ${it.enabled ? 'checked':''}
             onchange="toggleEnabled(${setId}, ${it.rule_id}, this.checked)"></td>
-      <td>${it.note ?? ''}</td>
       <td>
         <button class="btn btn-sm btn-outline-danger" onclick="detachRule(${setId}, ${it.rule_id})">Remove</button>
       </td>`;

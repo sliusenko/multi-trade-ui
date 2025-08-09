@@ -18,7 +18,7 @@ class StrategySetResponse(StrategySetBase):
     class Config: orm_mode = True
 
 
-# app/schemas/strategy_set_rules.py
+# app/schemas/strategy_sets_rules.py
 class StrategySetRuleBase(BaseModel):
     set_id: int
     rule_id: int
