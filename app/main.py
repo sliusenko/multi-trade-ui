@@ -24,7 +24,7 @@ app.include_router(auth_router, prefix="/api/auth")
 app.include_router(strategy_router)
 app.include_router(config_users.router)
 app.include_router(sets_router)
-app.include_router(strategy_set_rules.router)
+app.include_router(strategy_set_rules)
 app.include_router(weights_router)
 app.router.redirect_slashes = False
 
