@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate
+from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate, SetRuleCreate
 from app.services.db import database
 from app.models import strategy_sets_rules, strategy_rules, strategy_sets
 from app.dependencies import get_current_user
