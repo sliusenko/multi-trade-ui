@@ -5,10 +5,8 @@ from typing import Optional, List, Literal, Union
 from enum import Enum
 from decimal import Decimal
 
-
-from app.services.db import database
-from app.models import strategy_rules
-from app.dependencies import get_current_user
+Action = Literal["BUY", "SELL"]
+Param = Optional[Union[int, float, Decimal, str]]
 
 # ===== Enums =====
 class ActionEnum(str, Enum):
@@ -18,8 +16,6 @@ class ActionEnum(str, Enum):
 class ConditionTypeEnum(str, Enum):
     RSI_ABOVE = "RSI_ABOVE"
     RSI_BELOW = "RSI_BELOW"
-    # Додай інші типи умов за потреби
-
 
 # ===== Schemas =====
 class StrategyRuleBase(BaseModel):
@@ -37,9 +33,6 @@ class StrategyRuleCreate(StrategyRuleBase):
 
 class StrategyRuleUpdate(StrategyRuleBase):
     pass
-
-Action = Literal["BUY", "SELL"]
-Param = Optional[Union[int, float, Decimal, str]]  # ← ключова зміна
 
 class StrategyRuleResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)  # замість orm_mode у v2

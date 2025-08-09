@@ -4,6 +4,9 @@ from typing import Optional, List, Literal, Union
 from fastapi import APIRouter, Depends, HTTPException, status
 from decimal import Decimal
 
+Action = Literal["BUY", "SELL"]
+Param  = Optional[Union[int, float, Decimal, str]]
+
 class StrategySetBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -30,12 +33,9 @@ class SetRuleUpdate(BaseModel):
     enabled: Optional[bool] = None
     priority: Optional[int] = Field(None, ge=0)
 
-Action = Literal["BUY", "SELL"]
-Param  = Optional[Union[int, float, Decimal, str]]
-
 class SetRuleItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    id: int
+    rule_id: int
     action: Action
     condition_type: str
     param_1: Param = None
