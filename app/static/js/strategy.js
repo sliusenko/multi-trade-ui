@@ -81,7 +81,7 @@ function renderRuleRow(rule) {
   const [editBtn, toggleBtn, delBtn] = actionsTd.querySelectorAll('button');
 
   editBtn.addEventListener('click', () => openEditRule(rule));
-  toggleBtn.addEventListener('click', () => toggleEnabled(rule.id, !rule.enabled));
+  toggleBtn.addEventListener('click', () => toggleEnabled(rule));
   delBtn.addEventListener('click', () => deleteRule(rule.id));
 
   cells.forEach(td => tr.appendChild(td));
@@ -198,18 +198,32 @@ async function updateRule(id, body) {
 }
 
 // ====== Toggle ======
-async function toggleEnabled(id, newVal) {
+async function toggleEnabled(rule) {
+  // сформуємо повне тіло, як очікує бекенд
+  const body = {
+    action: (rule.action || '').trim(),
+    condition_type: (rule.condition_type || '').trim(),
+    param_1: (rule.param_1 ?? '') || null,
+    param_2: (rule.param_2 ?? '') || null,
+    exchange: (rule.exchange || '').toLowerCase() || null,
+    pair: (rule.pair || '').toUpperCase() || null,
+    priority: rule.priority ?? null,
+    enabled: !rule.enabled, // <- міняємо статус тут
+  };
+
   try {
-    const res = await apiFetch(`/api/strategy_rules/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ enabled: !!newVal }),
+    const res = await apiFetch(`/api/strategy_rules/${rule.id}`, {
+      method: 'PUT',            // якщо у тебе PATCH — поміняй тут і на бекенді
+      body: JSON.stringify(body),
     });
-    if (res.ok) {
-      await loadRules();
+
+    if (!res.ok) {
+      const txt = await safeText(res);
+      alert(`Toggle failed: ${res.status}\n${txt}`);
       return;
     }
-    const txt = await safeText(res);
-    alert(`Toggle failed: ${res.status}\n${txt}`);
+
+    await loadRules();
   } catch (e) {
     console.error(e);
     alert('Network error on toggle');
