@@ -26,6 +26,7 @@ app.include_router(config_users.router)
 app.include_router(sets_router)
 app.include_router(set_rules_router)
 app.include_router(weights_router)
+app.router.redirect_slashes = False
 
 # === Middleware для сесій ===
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
