@@ -1,5 +1,7 @@
+from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
+from datetime import datetime
 from pydantic import BaseModel, Field
 from sqlalchemy import select, delete, update, func
 from sqlalchemy.dialects.postgresql import insert
@@ -22,7 +24,7 @@ class WeightsUpsert(WeightsBase):
     pair: str
 
 class WeightsResponse(WeightsBase):
-    updated_at: Optional[str] = None
+    updated_at: datetime | None = None
 
 @router.get("", response_model=List[WeightsResponse])
 @router.get("/", response_model=List[WeightsResponse])
