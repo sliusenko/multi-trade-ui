@@ -1,7 +1,7 @@
 from sqlalchemy import (
     Table, Column, Integer, String, Boolean, ForeignKey,
     BigInteger, MetaData, Float, MetaData, DateTime,
-    UniqueConstraint, Text
+    UniqueConstraint, Text, text
 )
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from datetime import datetime

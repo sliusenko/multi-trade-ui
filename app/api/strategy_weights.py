@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, text
 from typing import Optional, List
 from app.schemas.strategy_weights import (
     StrategyWeightsResponse,
