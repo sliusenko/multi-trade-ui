@@ -1,3 +1,49 @@
+async function refreshAttachSelect(setId) {
+  const all = await (await apiFetch('/api/strategy_rules')).json();
+  const inSet = await (await apiFetch(`/api/strategy_sets/${setId}/rules`)).json();
+  const inSetIds = new Set(inSet.map(x => x.rule_id));
+  const sel = document.getElementById('ruleSelect');
+  sel.innerHTML = all
+    .filter(r => !inSetIds.has(r.id))
+    .map(r => `<option value="${r.id}">[${r.id}] ${r.action} ${r.condition_type} ${r.param_1??''}/${r.param_2??''}</option>`)
+    .join('');
+}
+
+// toggle enabled
+async function toggleSetRuleEnabled(setId, ruleId, enabled) {
+  const res = await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled })
+  });
+  if (!res.ok) alert('Failed to update enabled');
+}
+
+// debounce for priority edits
+const __prioTimers = {};
+function onPriorityInput(setId, ruleId, el) {
+  clearTimeout(__prioTimers[ruleId]);
+  __prioTimers[ruleId] = setTimeout(async () => {
+    const priority = parseInt(el.value || '0', 10);
+    const r = await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ priority })
+    });
+    if (!r.ok) alert('Failed to update priority');
+  }, 300);
+}
+
+async function attachRule() {
+  const btn = event.currentTarget; btn.disabled = true;
+  try { /* ... POST ... */ }
+  finally { btn.disabled = false; }
+}
+
+async function detachSetRule(setId, ruleId, btn) {
+  btn.disabled = true;
+  try { /* ... DELETE ... */ }
+  finally { btn.disabled = false; }
+}
+
 async function loadSetsIntoSelect() {
   const res = await apiFetch('/api/strategy_sets'); // твій існуючий список сетів
   const sets = await res.json();
