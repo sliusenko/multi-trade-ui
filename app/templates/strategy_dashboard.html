@@ -174,14 +174,12 @@
   <!-- Нові модулі -->
   <script src="/static/js/strategy_sets.js"></script>
   <script src="/static/js/strategy_weights.js"></script>
-
-  <!-- Початкове завантаження -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // очікуємо, що у strategy.js оголошені loadRules()/addRule() тощо
-      if (typeof loadRules === 'function') loadRules();
-      if (typeof loadSets === 'function') loadSets();
-      if (typeof loadWeights === 'function') loadWeights();
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('[init] DOM ready');
+      try { if (typeof loadRules === 'function') { console.log('[init] loadRules'); loadRules(); } } catch(e){ console.error('loadRules err', e); }
+      try { if (typeof loadSets === 'function')  { console.log('[init] loadSets');  loadSets();  } } catch(e){ console.error('loadSets err', e); }
+      try { if (typeof loadWeights === 'function'){ console.log('[init] loadWeights'); loadWeights(); } } catch(e){ console.error('loadWeights err', e); }
     });
   </script>
 </body>
