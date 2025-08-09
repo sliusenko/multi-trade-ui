@@ -1,131 +1,170 @@
-<script>
-/* ===== Strategy Sets CRUD ===== */
+// ===== strategy_sets.js =====
+console.log('[strategy_sets.js] loaded');
+
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('access_token');
+  const headers = options.headers || {};
+  headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
+}
+
+function sVal(id){ return document.getElementById(id)?.value?.trim() ?? ""; }
+function sBool(id){ return !!document.getElementById(id)?.checked; }
+
+function setPayloadFromForm() {
+  return {
+    name: sVal("set_name"),
+    description: sVal("set_desc") || null,
+    exchange: sVal("set_exchange").toLowerCase() || null,
+    pair: sVal("set_pair").toUpperCase() || null,
+    active: sBool("set_active"),
+  };
+}
+
 async function loadSets() {
-  const res = await apiFetch('/api/strategy_sets');
-  const sets = res.ok ? await res.json() : [];
   const tbody = document.getElementById('setsTable');
-  tbody.innerHTML = '';
-  sets.forEach(s => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${s.id}</td>
-      <td>${escapeHtml(s.name)}</td>
-      <td>${s.active ? '✅' : '❌'}</td>
-      <td>${s.exchange ?? ''}</td>
-      <td>${s.pair ?? ''}</td>
-      <td class="d-flex gap-2">
-        <button class="btn btn-sm btn-primary" onclick="openManageSetRules(${s.id})">Manage rules</button>
-        <button class="btn btn-sm btn-warning" onclick="toggleSetActive(${s.id}, ${!s.active})">${s.active ? 'Deactivate' : 'Activate'}</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteSet(${s.id})">Delete</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
+  tbody.innerHTML = `<tr><td colspan="6">Loading…</td></tr>`;
+  try {
+    const res = await apiFetch('/api/strategy_sets', { method: 'GET' });
+    if (!res.ok) { tbody.innerHTML = `<tr><td colspan="6">Error ${res.status}</td></tr>`; return; }
+    const sets = await res.json();
+    tbody.innerHTML = '';
+    sets.forEach(st => tbody.appendChild(renderSetRow(st)));
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="6">Network error</td></tr>`;
+  }
+}
+
+function renderSetRow(st) {
+  const tr = document.createElement('tr');
+
+  const cells = [
+    st.id,
+    st.name ?? '',
+    st.active ? '✅' : '❌',
+    st.exchange ?? '',
+    st.pair ?? ''
+  ].map(t => { const td = document.createElement('td'); td.textContent = t; return td; });
+
+  const actionsTd = document.createElement('td');
+  actionsTd.innerHTML = `
+    <div class="btn-group btn-group-sm" role="group">
+      <button class="btn btn-primary">Edit</button>
+      <button class="btn btn-warning">${st.active ? 'Deactivate' : 'Activate'}</button>
+      <button class="btn btn-danger">Delete</button>
+    </div>
+  `;
+  const [editBtn, toggleBtn, delBtn] = actionsTd.querySelectorAll('button');
+  editBtn.addEventListener('click', () => openEditSet(st));
+  toggleBtn.addEventListener('click', () => toggleSetActive(st));
+  delBtn.addEventListener('click', () => deleteSet(st.id));
+
+  cells.forEach(td => tr.appendChild(td));
+  tr.appendChild(actionsTd);
+  return tr;
 }
 
 async function addSet() {
-  const payload = {
-    name: document.getElementById('set_name').value.trim(),
-    description: document.getElementById('set_desc').value.trim() || null,
-    exchange: document.getElementById('set_exchange').value.trim() || null,
-    pair: document.getElementById('set_pair').value.trim() || null,
-    active: document.getElementById('set_active').checked
-  };
-  const res = await apiFetch('/api/strategy_sets', { method:'POST', body: JSON.stringify(payload) });
-  if (!res.ok) return alert('Error creating set: ' + res.status);
+  console.log('[addSet] called');
+  const body = setPayloadFromForm();
+
+  if (!body.name) { alert('Name — обовʼязкове поле'); return; }
+
+  let res = await apiFetch('/api/strategy_sets', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  console.log('[addSet] POST status=', res.status);
+
+  if (!res.ok && res.status !== 201) {
+    // fallback зі слешем на всяк випадок
+    if ([405,307,308].includes(res.status)) {
+      res = await apiFetch('/api/strategy_sets/', { method:'POST', body: JSON.stringify(body) });
+      console.log('[addSet] POST / with slash status=', res.status);
+    }
+  }
+
+  if (!res.ok && res.status !== 201) {
+    alert(`Add Set failed: ${res.status}\n${await res.text()}`);
+    return;
+  }
+
+  // очистити форму
+  ["set_name","set_desc","set_exchange","set_pair"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const ac = document.getElementById('set_active'); if (ac) ac.checked = false;
+
   await loadSets();
 }
 
-async function toggleSetActive(id, active) {
-  const res = await apiFetch('/api/strategy_sets/' + id, { method:'PUT', body: JSON.stringify({ active }) });
-  if (!res.ok) return alert('Error updating set');
+function openEditSet(st) {
+  window.__editSetId__ = st.id;
+  document.getElementById('es_id').value = st.id;
+  document.getElementById('es_name').value = st.name ?? '';
+  document.getElementById('es_desc').value = st.description ?? '';
+  document.getElementById('es_exchange').value = st.exchange ?? '';
+  document.getElementById('es_pair').value = st.pair ?? '';
+  document.getElementById('es_active').checked = !!st.active;
+
+  window.__gatherSetEditPayload__ = function() {
+    return {
+      name: document.getElementById('es_name').value.trim(),
+      description: document.getElementById('es_desc').value.trim() || null,
+      exchange: document.getElementById('es_exchange').value.trim().toLowerCase() || null,
+      pair: document.getElementById('es_pair').value.trim().toUpperCase() || null,
+      active: document.getElementById('es_active').checked,
+    };
+  };
+
+  const modal = new bootstrap.Modal(document.getElementById('editSetModal'));
+  modal.show();
+}
+
+async function updateSet(id, body) {
+  console.log('[updateSet] called', id, body);
+  let res = await apiFetch(`/api/strategy_sets/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+  if (!res.ok && [405,307,308].includes(res.status)) {
+    res = await apiFetch(`/api/strategy_sets/${id}/`, { method:'PUT', body: JSON.stringify(body) });
+  }
+  if (!res.ok) {
+    alert(`Update Set failed: ${res.status}\n${await res.text()}`);
+    return;
+  }
   await loadSets();
+}
+
+async function toggleSetActive(st) {
+  const body = {
+    name: st.name ?? '',
+    description: st.description ?? null,
+    exchange: (st.exchange || '').toLowerCase() || null,
+    pair: (st.pair || '').toUpperCase() || null,
+    active: !st.active,
+  };
+  let res = await apiFetch(`/api/strategy_sets/${st.id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) alert(`Toggle failed: ${res.status}\n${await res.text()}`);
+  else await loadSets();
 }
 
 async function deleteSet(id) {
-  if (!confirm('Delete this set?')) return;
-  const res = await apiFetch('/api/strategy_sets/' + id, { method:'DELETE' });
-  if (!res.ok) return alert('Error deleting set');
+  if (!confirm(`Delete set #${id}?`)) return;
+  const res = await apiFetch(`/api/strategy_sets/${id}`, { method: 'DELETE' });
+  if (!res.ok && res.status !== 204) {
+    alert(`Delete failed: ${res.status}\n${await res.text()}`);
+    return;
+  }
   await loadSets();
 }
 
-/* ===== Manage set rules (dual list) ===== */
-let currentSetId = null;
-const manageSetRulesModal = () => new bootstrap.Modal(document.getElementById('manageSetRulesModal'));
-
-async function openManageSetRules(setId) {
-  currentSetId = setId;
-  // 1) load all rules (reuse your existing GET /api/strategy_rules)
-  const rulesRes = await apiFetch('/api/strategy_rules');
-  const rules = rulesRes.ok ? await rulesRes.json() : [];
-
-  // 2) load rules inside set
-  const inRes = await apiFetch(`/api/strategy_set_rules/${setId}`);
-  const inSet = inRes.ok ? await inRes.json() : [];
-  const inSetMap = new Map(inSet.map(r => [r.rule_id, r]));
-
-  // render lists
-  const allBox = document.getElementById('allRulesList');
-  const setBox = document.getElementById('setRulesList');
-  allBox.innerHTML = '';
-  setBox.innerHTML = '';
-
-  rules.forEach(r => {
-    if (!inSetMap.has(r.id)) {
-      const btn = document.createElement('button');
-      btn.className = 'list-group-item list-group-item-action';
-      btn.textContent = `#${r.id} ${r.action} / ${r.condition_type} [${r.exchange}:${r.pair}]`;
-      btn.onclick = () => addRuleToSet(setId, r.id);
-      allBox.appendChild(btn);
-    }
-  });
-
-  inSet.forEach(r => {
-    setBox.appendChild(renderSetRuleRow(r));
-  });
-
-  manageSetRulesModal().show();
-}
-
-function renderSetRuleRow(r) {
-  const div = document.createElement('div');
-  div.className = 'list-group-item';
-  div.innerHTML = `
-    <div class="d-flex align-items-center justify-content-between gap-2">
-      <div>#${r.rule_id}</div>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" ${r.enabled ? 'checked':''}
-               onchange="updateSetRule(${r.set_id}, ${r.rule_id}, {enabled:this.checked})">
-        <label class="form-check-label">enabled</label>
-      </div>
-      <div class="input-group" style="width:150px">
-        <span class="input-group-text">prio</span>
-        <input type="number" class="form-control" value="${r.override_priority ?? ''}"
-               onblur="updateSetRule(${r.set_id}, ${r.rule_id}, {override_priority: this.value ? parseInt(this.value) : null})">
-      </div>
-      <button class="btn btn-sm btn-outline-danger"
-              onclick="removeRuleFromSet(${r.set_id}, ${r.rule_id})">Remove</button>
-    </div>`;
-  return div;
-}
-
-async function addRuleToSet(setId, ruleId) {
-  const payload = { set_id: setId, rule_id: ruleId, enabled: true, override_priority: null };
-  const res = await apiFetch('/api/strategy_set_rules', { method:'POST', body: JSON.stringify(payload) });
-  if (!res.ok) return alert('Error adding rule');
-  openManageSetRules(setId);
-}
-
-async function updateSetRule(setId, ruleId, patch) {
-  const res = await apiFetch(`/api/strategy_set_rules/${setId}/${ruleId}`, { method:'PUT', body: JSON.stringify(patch) });
-  if (!res.ok) alert('Error updating rule in set');
-}
-
-async function removeRuleFromSet(setId, ruleId) {
-  const res = await apiFetch(`/api/strategy_set_rules/${setId}/${ruleId}`, { method:'DELETE' });
-  if (!res.ok) return alert('Error removing rule');
-  openManageSetRules(setId);
-}
-
-/* small util */
-function escapeHtml(s){return (s??'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]))}
-</script>
+// експорт у глобал (на випадок ручного виклику з консолі)
+window.loadSets = loadSets;
+window.addSet = addSet;
+window.updateSet = updateSet;
+window.deleteSet = deleteSet;
