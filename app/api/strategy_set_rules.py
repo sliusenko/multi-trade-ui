@@ -49,7 +49,6 @@ async def list_set_rules(set_id: int, uid: int = Depends(get_current_user)):
             strategy_rules.c.param_2,
             strategy_set_rules.c.enabled,
             strategy_set_rules.c.priority,
-            strategy_set_rules.c.override_priority,
             strategy_set_rules.c.note,
         )
         .select_from(strategy_set_rules.join(

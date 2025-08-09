@@ -1,5 +1,5 @@
 # app/schemas/strategy_sets.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional, List
 
 class StrategySetBase(BaseModel):
@@ -25,31 +25,13 @@ class StrategySetRuleBase(BaseModel):
     enabled: bool = True
     override_priority: Optional[int] = None
 
+class StrategySetRuleCreate(StrategySetRuleBase): pass
+class StrategySetRuleUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    override_priority: Optional[int] = None
+
 class StrategySetRuleResponse(StrategySetRuleBase): pass
 
-class SetRuleCreate(BaseModel):
-    rule_id: int
-    enabled: bool = True
-    priority: int = Field(ge=0, default=100)
-    override_priority: Optional[int] = None
-    note: Optional[str] = None
-
-class SetRuleUpdate(BaseModel):
-    enabled: Optional[bool] = None
-    priority: Optional[int] = Field(None, ge=0)
-    override_priority: Optional[int] = None
-    note: Optional[str] = None
-
-class SetRuleItem(BaseModel):
-    rule_id: int
-    action: str
-    condition_type: str
-    param_1: Optional[int]
-    param_2: Optional[int]
-    enabled: bool
-    priority: int
-    override_priority: Optional[int] = None
-    note: Optional[str] = None
 
 # app/schemas/strategy_weights.py
 class StrategyWeightsBase(BaseModel):

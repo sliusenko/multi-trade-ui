@@ -86,36 +86,15 @@ async function loadRulesForSelectedSet() {
 }
 
 async function attachRule() {
-  const setId = document.getElementById('setSelect')?.value;
-  const ruleId = parseInt(document.getElementById('ruleSelect')?.value);
-  const priority = parseInt(document.getElementById('rulePriority')?.value || '100', 10);
-  const override_priority = document.getElementById('ruleOverridePrio')?.value;
-  const note = document.getElementById('ruleNote')?.value || null;
-
-  if (!setId || !ruleId) return;
-
-  const body = {
-    rule_id: ruleId,
-    enabled: true,
-    priority,
-    note
-  };
-  if (override_priority !== '' && override_priority != null) {
-    body.override_priority = parseInt(override_priority, 10);
-  }
-
+  const setId = document.getElementById('setSelect').value;
+  const ruleId = parseInt(document.getElementById('ruleSelect').value);
+  const prio = parseInt(document.getElementById('rulePriority').value || '100');
   const res = await apiFetch(`/api/strategy_sets/${setId}/rules`, {
     method: 'POST',
-    body: JSON.stringify(body)
+    body: JSON.stringify({ rule_id: ruleId, priority: prio, enabled: true })
   });
-  if (!res.ok) {
-    alert('Attach failed: ' + (await res.text()));
-    return;
-  }
-  // очистити поля після успіху
-  if (document.getElementById('ruleNote')) document.getElementById('ruleNote').value = '';
-  if (document.getElementById('ruleOverridePrio')) document.getElementById('ruleOverridePrio').value = '';
-  await loadRulesInCurrentSet();
+  if (!res.ok) { alert('Attach failed: ' + res.status); return; }
+  await loadRulesForSelectedSet();
 }
 
 async function toggleEnabled(setId, ruleId, enabled) {
