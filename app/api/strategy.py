@@ -49,3 +49,26 @@ async def delete_rule(rule_id: int, current_user_id: int = Depends(get_current_u
         delete(strategy_rules).where(strategy_rules.c.id == rule_id, strategy_rules.c.user_id == current_user_id)
     )
 
+@router.get("/filters/user-active-pairs")   # <-- ВАЖЛИВО: router, не app
+async def get_filters(
+    user_id: int | None = Query(None),
+    exchange: str | None = Query(None),
+):
+    users = await database.fetch_all(text(
+        "SELECT DISTINCT user_id FROM user_active_pairs"
+    ))
+    exchanges = await database.fetch_all(text(
+        "SELECT DISTINCT exchange FROM user_active_pairs "
+        "WHERE (:uid IS NULL OR user_id = :uid)"
+    ), {"uid": user_id})
+    pairs = await database.fetch_all(text(
+        "SELECT DISTINCT pair FROM user_active_pairs "
+        "WHERE (:uid IS NULL OR user_id = :uid) "
+        "AND (:ex IS NULL OR exchange = :ex)"
+    ), {"uid": user_id, "ex": exchange})
+
+    return {
+        "users": sorted([r[0] for r in users]),
+        "exchanges": sorted([r[0] for r in exchanges]),
+        "pairs": sorted([r[0] for r in pairs]),
+    }
