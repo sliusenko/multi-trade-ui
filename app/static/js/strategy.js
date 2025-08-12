@@ -251,6 +251,36 @@ async function safeText(res) {
   try { return await res.text(); } catch { return ''; }
 }
 
+// ====================== filters ==================
+async function loadFilters() {
+  const res = await apiFetch('/filters/user-active-pairs');
+  const data = await res.json();
+
+  fillSelect('filter_user', data.users);
+  fillSelect('filter_exchange', data.exchanges);
+  fillSelect('filter_pair', data.pairs);
+}
+
+function fillSelect(id, values) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = `<option value="">All</option>` + values.map(v => 
+    `<option value="${v}">${v}</option>`).join('');
+}
+
+['filter_user','filter_exchange','filter_pair'].forEach(id => {
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+
+function applyFilters() {
+  const userId = document.getElementById('filter_user').value;
+  const exchange = document.getElementById('filter_exchange').value;
+  const pair = document.getElementById('filter_pair').value;
+
+  loadRules({ userId, exchange, pair });
+  loadSets({ userId, exchange, pair });
+  loadWeights({ userId, exchange, pair });
+}
+
 // Експортуємо у глобал (не обов’язково, але хай буде)
 window.loadRules = loadRules;
 window.addRule = addRule;
