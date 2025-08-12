@@ -309,6 +309,21 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { if (typeof loadWeights === 'function') await loadWeights(); } catch(e){ console.error('loadWeights err', e); }
 });
 
+// глобальні хелпери
+window.getActiveFilters = function () {
+  return {
+    user_id: document.getElementById('filter_user')?.value || '',
+    exchange: document.getElementById('filter_exchange')?.value || '',
+    pair: document.getElementById('filter_pair')?.value || ''
+  };
+};
+window.buildQuery = function (params) {
+  const usp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => v && usp.append(k, v));
+  const qs = usp.toString();
+  return qs ? `?${qs}` : '';
+};
+
 // Експортуємо у глобал (не обов’язково, але хай буде)
 window.loadRules = loadRules;
 window.addRule = addRule;
