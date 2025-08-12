@@ -19,6 +19,17 @@ users = Table(
     Column("password_hash", String(255)),
 )
 
+user_active_pairs = Table(
+    "user_active_pairs",
+    metadata,
+    Column("user_id", Integer, nullable=False),
+    Column("exchange", String, nullable=False),
+    Column("pair", String, nullable=False),
+    Column("is_active", Boolean, default=True),
+    Column("auto_trade_enabled", Boolean, default=True),
+)
+
+
 strategy_rules = Table(
     "strategy_rules",
     metadata,
