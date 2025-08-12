@@ -26,7 +26,7 @@ class WeightsUpsert(WeightsBase):
 class WeightsResponse(WeightsBase):
     updated_at: datetime | None = None
 
-@router.get("/", response_model=List[WeightsResponse])
+@router.get("", response_model=List[WeightsResponse])
 async def list_weights(
     exchange: str | None = Query(None),
     pair: str | None = Query(None),
