@@ -286,6 +286,14 @@ async function loadRules() {
   }
 }
 
+window.apiFetch ??= async function(url, options = {}) {
+  const token = localStorage.getItem('access_token');
+  const headers = options.headers || {};
+  headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
+};
+
 
 window.addEventListener('DOMContentLoaded', async () => {
   console.log('[init] DOM ready');
