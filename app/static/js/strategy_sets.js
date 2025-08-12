@@ -25,16 +25,45 @@ function setPayloadFromForm() {
 
 async function loadSets() {
   const tbody = document.getElementById('setsTable');
-  tbody.innerHTML = `<tr><td colspan="6">Loading…</td></tr>`;
-  try {
-    const res = await apiFetch('/api/strategy_sets', { method: 'GET' });
-    if (!res.ok) { tbody.innerHTML = `<tr><td colspan="6">Error ${res.status}</td></tr>`; return; }
-    const sets = await res.json();
+  if (tbody) tbody.innerHTML = `<tr><td colspan="6">Loading…</td></tr>`;
+
+  // беремо ТІЛЬКИ exchange/pair (user_id все одно приходить з токена на бекенді)
+  const { exchange, pair, user_id } = getActiveFilters();
+  const url = `/api/strategy_sets${buildQuery({ exchange, pair, user_id })}`;
+
+  const res = await apiFetch(url);
+  if (!res.ok) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6">Error ${res.status}</td></tr>`;
+    return;
+  }
+  const sets = await res.json();
+
+  // 1) таблиця
+  if (tbody) {
     tbody.innerHTML = '';
-    sets.forEach(st => tbody.appendChild(renderSetRow(st)));
-  } catch (e) {
-    console.error(e);
-    tbody.innerHTML = `<tr><td colspan="6">Network error</td></tr>`;
+    sets.forEach(s => tbody.appendChild(renderSetRow(s)));
+  }
+
+  // 2) селект зверху "Rules in Set"
+  const setSelect = document.getElementById('setSelect');
+  if (setSelect) {
+    const keep = setSelect.value;
+    setSelect.innerHTML = '';
+    sets.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id;
+      // покажемо назву + (ex/pair), якщо є
+      const extra = [s.exchange, s.pair].filter(Boolean).join(' ');
+      o.textContent = extra ? `${s.name} (${extra})` : s.name;
+      setSelect.appendChild(o);
+    });
+    if (keep && [...setSelect.options].some(o => o.value === keep)) {
+      setSelect.value = keep;
+    }
+    // перевантажити правила для вибраного сету
+    if (typeof loadSetRules === 'function' && setSelect.value) {
+      loadSetRules(setSelect.value);
+    }
   }
 }
 
@@ -165,7 +194,8 @@ async function deleteSet(id) {
 }
 
 // експорт у глобал (на випадок ручного виклику з консолі)
-window.loadSets = loadSets;
+window.loadSets = loadSets; 
 window.addSet = addSet;
 window.updateSet = updateSet;
 window.deleteSet = deleteSet;
+
