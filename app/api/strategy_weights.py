@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
-from sqlalchemy import select, delete, update, func
+from sqlalchemy import select, delete, update, func, text, distinct, and_
 from sqlalchemy.dialects.postgresql import insert
 from app.services.db import database
 from app.dependencies import get_current_user
