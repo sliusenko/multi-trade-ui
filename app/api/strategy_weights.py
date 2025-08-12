@@ -31,7 +31,7 @@ class WeightsResponse(WeightsBase):
 async def list_weights(
     exchange: str | None = Query(None),
     pair: str | None = Query(None),
-    current_user_id: int = Depends(get_current_user_id),
+    current_user_id: int = Depends(get_current_user),
 ):
     stmt = select(strategy_weights).where(strategy_weights.c.user_id == current_user_id)
     if exchange:
