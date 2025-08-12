@@ -1,5 +1,5 @@
 # app/routers/strategy_sets_rules.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate, SetRuleCreate
