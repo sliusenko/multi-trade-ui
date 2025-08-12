@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/strategy_rules", tags=["Strategy Rules"])
 async def list_rules(
     exchange: str | None = Query(None),
     pair: str | None = Query(None),
-    current_user_id: int = Depends(get_current_user_id),
+    current_user_id: int = Depends(get_current_user),
 ):
     stmt = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
     if exchange:
