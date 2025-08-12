@@ -30,7 +30,7 @@ class StrategySetResponse(StrategySetBase):
 async def list_sets(
     exchange: str | None = Query(None),
     pair: str | None = Query(None),
-    current_user_id: int = Depends(get_current_user_id),
+    current_user_id: int = Depends(get_current_user),
 ):
     stmt = select(strategy_sets).where(strategy_sets.c.user_id == current_user_id)
     if exchange:
