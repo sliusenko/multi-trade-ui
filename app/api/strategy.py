@@ -1,5 +1,5 @@
 # app/api/strategy.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from app.schemas.strategy import StrategyRuleCreate, StrategyRuleUpdate, StrategyRuleResponse
 from app.dependencies import get_current_user
