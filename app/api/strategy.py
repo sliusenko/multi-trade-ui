@@ -11,6 +11,20 @@ router = APIRouter(prefix="/api/strategy_rules", tags=["Strategy Rules"])
 
 # ---- GET (list) ----
 @router.get("", response_model=List[StrategyRuleResponse])
+async def list_rules(
+    exchange: str | None = Query(None),
+    pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user_id),
+):
+    stmt = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
+    if exchange:
+        stmt = stmt.where(strategy_rules.c.exchange == exchange.lower())
+    if pair:
+        stmt = stmt.where(strategy_rules.c.pair == pair.upper())
+    rows = await database.fetch_all(stmt)
+    return [dict(r) for r in rows]
+
+@router.get("", response_model=List[StrategyRuleResponse])
 @router.get("/", response_model=List[StrategyRuleResponse])
 async def get_rules(current_user_id: int = Depends(get_current_user)):
     q = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
