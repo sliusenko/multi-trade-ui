@@ -32,6 +32,30 @@ function onPriorityInput(setId, ruleId, el) {
   }, 300);
 }
 
+async function refreshAttachRuleDropdown() {
+  const { user_id, exchange, pair } = getActiveFilters();
+  const url = `/api/strategy_rules${buildQuery({ user_id, exchange, pair })}`;
+  const res = await apiFetch(url);
+  if (!res.ok) return;
+  const rules = await res.json();
+
+  const ruleSelect = document.getElementById('ruleSelect');
+  if (ruleSelect) {
+    const keep = ruleSelect.value;
+    ruleSelect.innerHTML = '';
+    rules.forEach(r => {
+      const o = document.createElement('option');
+      const suffix = [r.exchange, r.pair].filter(Boolean).join(' ');
+      o.value = r.id;
+      o.textContent = suffix ? `${r.action} ${r.condition_type} (${suffix})` : `${r.action} ${r.condition_type}`;
+      ruleSelect.appendChild(o);
+    });
+    if (keep && [...ruleSelect.options].some(o => o.value === keep)) {
+      ruleSelect.value = keep;
+    }
+  }
+}
+
 async function attachRule() {
   const btn = event.currentTarget; btn.disabled = true;
   try { /* ... POST ... */ }
@@ -116,3 +140,4 @@ async function detachRule(setId, ruleId) {
 
 // виклик при завантаженні сторінки
 loadSetsIntoSelect();
+window.refreshAttachRuleDropdown = refreshAttachRuleDropdown;
