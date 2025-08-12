@@ -5,7 +5,7 @@ from app.schemas.strategy import StrategyRuleCreate, StrategyRuleUpdate, Strateg
 from app.dependencies import get_current_user
 from sqlalchemy import select, update, delete, text
 from app.services.db import database
-from app.models import strategy_rules
+from app.models import strategy_rules, user_active_pairs
 
 router = APIRouter(prefix="/api/strategy_rules", tags=["Strategy Rules"])
 
