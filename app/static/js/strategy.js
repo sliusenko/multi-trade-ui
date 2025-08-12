@@ -252,34 +252,54 @@ async function safeText(res) {
 }
 
 // ====================== filters ==================
-async function loadFilters() {
-  const res = await apiFetch('/filters/user-active-pairs');
-  const data = await res.json();
-
-  fillSelect('filter_user', data.users);
-  fillSelect('filter_exchange', data.exchanges);
-  fillSelect('filter_pair', data.pairs);
+function getActiveFilters() {
+  return {
+    user_id: document.getElementById('filter_user')?.value || '',
+    exchange: document.getElementById('filter_exchange')?.value || '',
+    pair: document.getElementById('filter_pair')?.value || ''
+  };
+}
+function buildQuery(params) {
+  const usp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => v && usp.append(k, v));
+  const qs = usp.toString();
+  return qs ? `?${qs}` : '';
 }
 
-function fillSelect(id, values) {
-  const sel = document.getElementById(id);
-  sel.innerHTML = `<option value="">All</option>` + values.map(v => 
-    `<option value="${v}">${v}</option>`).join('');
+async function loadRules() {
+  const tbody = document.getElementById('rulesTable');
+  tbody.innerHTML = `<tr><td colspan="10">Loading…</td></tr>`;
+  const url = `/api/strategy_rules${buildQuery(getActiveFilters())}`;
+
+  try {
+    const res = await apiFetch(url, { method: 'GET' });
+    if (!res.ok) {
+      tbody.innerHTML = `<tr><td colspan="10">Error ${res.status}</td></tr>`;
+      return;
+    }
+    const rules = await res.json();
+    tbody.innerHTML = '';
+    rules.forEach(rule => tbody.appendChild(renderRuleRow(rule)));
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="10">Network error</td></tr>`;
+  }
 }
 
-['filter_user','filter_exchange','filter_pair'].forEach(id => {
-  document.getElementById(id).addEventListener('change', applyFilters);
+
+window.addEventListener('DOMContentLoaded', async () => {
+  console.log('[init] DOM ready');
+
+  // ... ваші кнопки/слухачі вище без змін ...
+
+  // 1) завантажити списки фільтрів
+  await loadFilters();
+
+  // 2) підтягнути таблиці з поточними фільтрами
+  try { if (typeof loadRules === 'function') await loadRules(); } catch(e){ console.error('loadRules err', e); }
+  try { if (typeof loadSets === 'function')  await loadSets();  } catch(e){ console.error('loadSets err', e); }
+  try { if (typeof loadWeights === 'function') await loadWeights(); } catch(e){ console.error('loadWeights err', e); }
 });
-
-function applyFilters() {
-  const userId = document.getElementById('filter_user').value;
-  const exchange = document.getElementById('filter_exchange').value;
-  const pair = document.getElementById('filter_pair').value;
-
-  loadRules({ userId, exchange, pair });
-  loadSets({ userId, exchange, pair });
-  loadWeights({ userId, exchange, pair });
-}
 
 // Експортуємо у глобал (не обов’язково, але хай буде)
 window.loadRules = loadRules;
