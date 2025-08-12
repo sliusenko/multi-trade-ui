@@ -6,7 +6,7 @@ from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate, SetRuleCreate
 from app.services.db import database
 from app.models import strategy_sets_rules, strategy_rules, strategy_sets
 from app.dependencies import get_current_user
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select, update, delete, text, distinct, and_
 
 router = APIRouter(prefix="/api/strategy_sets", tags=["Strategy Set Rules"])
 
