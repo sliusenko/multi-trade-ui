@@ -31,16 +31,20 @@ function weightPayloadFromForm(){
 
 async function loadWeights() {
   const tbody = document.getElementById('weightsTable');
-  tbody.innerHTML = `<tr><td colspan="8">Loading…</td></tr>`;
-  try {
-    const res = await apiFetch('/api/strategy_weights', { method: 'GET' });
-    if (!res.ok) { tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`; return; }
-    const items = await res.json();
+  if (tbody) tbody.innerHTML = `<tr><td colspan="8">Loading…</td></tr>`;
+
+  const { user_id, exchange, pair } = getActiveFilters();
+  const url = `/api/strategy_weights${buildQuery({ user_id, exchange, pair })}`;
+
+  const res = await apiFetch(url);
+  if (!res.ok) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
+    return;
+  }
+  const rows = await res.json();
+  if (tbody) {
     tbody.innerHTML = '';
-    items.forEach(w => tbody.appendChild(renderWeightRow(w)));
-  } catch (e) {
-    console.error(e);
-    tbody.innerHTML = `<tr><td colspan="8">Network error</td></tr>`;
+    rows.forEach(w => tbody.appendChild(renderWeightRow(w)));
   }
 }
 
