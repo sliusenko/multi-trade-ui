@@ -50,32 +50,32 @@ async def delete_rule(rule_id: int, current_user_id: int = Depends(get_current_u
     )
 
 @router.get("/filters/user-active-pairs")
-async def get_filters(user_id: int | None = Query(None),
-                      exchange: str | None = Query(None)):
-    # 1) всі користувачі
-    users = await database.fetch_all(
-        "SELECT DISTINCT user_id FROM user_active_pairs"
-    )
+async def get_filters(
+    user_id: int | None = Query(None),
+    exchange: str | None = Query(None),
+):
+    # --- users ---
+    stmt_users = select(distinct(user_active_pairs.c.user_id))
+    rows_users = await database.fetch_all(stmt_users)
+    users = sorted([r[0] for r in rows_users])
 
-    # 2) біржі, звужені за user_id (якщо заданий)
-    exchanges = await database.fetch_all(
-        "SELECT DISTINCT exchange "
-        "FROM user_active_pairs "
-        "WHERE (:uid IS NULL OR user_id = :uid)",
-        {"uid": user_id},
-    )
+    # --- exchanges (звужуємо за user_id, якщо заданий) ---
+    stmt_ex = select(distinct(user_active_pairs.c.exchange))
+    if user_id is not None:
+        stmt_ex = stmt_ex.where(user_active_pairs.c.user_id == user_id)
+    rows_ex = await database.fetch_all(stmt_ex)
+    exchanges = sorted([r[0] for r in rows_ex])
 
-    # 3) пари, звужені за user_id та exchange (якщо задані)
-    pairs = await database.fetch_all(
-        "SELECT DISTINCT pair "
-        "FROM user_active_pairs "
-        "WHERE (:uid IS NULL OR user_id = :uid) "
-        "AND (:ex IS NULL OR exchange = :ex)",
-        {"uid": user_id, "ex": exchange},
-    )
+    # --- pairs (звужуємо за user_id та exchange, якщо задані) ---
+    stmt_pairs = select(distinct(user_active_pairs.c.pair))
+    conds = []
+    if user_id is not None:
+        conds.append(user_active_pairs.c.user_id == user_id)
+    if exchange:
+        conds.append(user_active_pairs.c.exchange == exchange)
+    if conds:
+        stmt_pairs = stmt_pairs.where(and_(*conds))
+    rows_pairs = await database.fetch_all(stmt_pairs)
+    pairs = sorted([r[0] for r in rows_pairs])
 
-    return {
-        "users": sorted([r[0] for r in users]),
-        "exchanges": sorted([r[0] for r in exchanges]),
-        "pairs": sorted([r[0] for r in pairs]),
-    }
+    return {"users": users, "exchanges": exchanges, "pairs": pairs}
