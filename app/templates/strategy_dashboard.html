@@ -378,5 +378,59 @@
        try { if (typeof loadWeights === 'function') loadWeights(); } catch(e){ console.error('loadWeights err', e); }
      });
    </script>
+
+    <script>
+      // підлаштуй шлях під свій роутер:
+      const FILTERS_URL = '/api/strategy_rules/filters/user-active-pairs';
+    
+      function option(label, value='') {
+        const o = document.createElement('option');
+        o.value = value ?? '';
+        o.textContent = label ?? '';
+        return o;
+      }
+    
+      function fillSelect(id, values, allLabel) {
+        const el = document.getElementById(id);
+        el.innerHTML = '';
+        el.appendChild(option(allLabel, ''));
+        values.forEach(v => el.appendChild(option(String(v), String(v))));
+      }
+    
+      async function loadFilters(partial = {}) {
+        // partial може містити user_id / exchange — щоб групувати значення на бекенді
+        const qs = new URLSearchParams();
+        Object.entries(partial).forEach(([k,v]) => v && qs.append(k, v));
+        const url = qs.toString() ? `${FILTERS_URL}?${qs}` : FILTERS_URL;
+    
+        const r = await apiFetch(url);
+        if (!r.ok) { console.error('filters error', r.status); return; }
+        const data = await r.json();
+    
+        fillSelect('filter_user', data.users || [], 'All Users');
+        fillSelect('filter_exchange', data.exchanges || [], 'All Exchanges');
+        fillSelect('filter_pair', data.pairs || [], 'All Pairs');
+      }
+    
+      // каскад: при зміні user → перезавантажити exchanges/pairs; при зміні exchange → перезавантажити pairs
+      async function onFilterChange() {
+        const user_id = document.getElementById('filter_user').value || '';
+        const exchange = document.getElementById('filter_exchange').value || '';
+        // оновлюємо доступні значення для залежних селектів
+        await loadFilters({ user_id, exchange });
+        // і підтягуємо дані таблиць з активними фільтрами
+        loadRules();   // твоя оновлена з query‑params версія
+        loadSets?.();  // якщо робитимеш фільтри й там
+        loadWeights?.();
+      }
+    
+      window.addEventListener('DOMContentLoaded', async () => {
+        await loadFilters(); // стартові значення
+        ['filter_user','filter_exchange','filter_pair'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener('change', onFilterChange);
+        });
+      });
+    </script>
 </body>
 </html>
