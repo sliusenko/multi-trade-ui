@@ -48,3 +48,15 @@ async def delete_rule(rule_id: int, current_user_id: int = Depends(get_current_u
     await database.execute(
         delete(strategy_rules).where(strategy_rules.c.id == rule_id, strategy_rules.c.user_id == current_user_id)
     )
+# --------------------- filters -------------------------
+@app.get("/filters/user-active-pairs")
+def get_filters():
+    rows = db.session.execute("""
+        SELECT DISTINCT user_id, exchange, pair
+        FROM user_active_pairs
+    """).fetchall()
+    return {
+        "users": sorted({r.user_id for r in rows}),
+        "exchanges": sorted({r.exchange for r in rows}),
+        "pairs": sorted({r.pair for r in rows})
+    }
