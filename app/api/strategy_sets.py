@@ -25,12 +25,20 @@ class StrategySetUpdate(StrategySetBase):
 class StrategySetResponse(StrategySetBase):
   id: int
 
-@router.get("", response_model=List[StrategySetResponse])
 @router.get("/", response_model=List[StrategySetResponse])
-async def list_sets(current_user_id: int = Depends(get_current_user)):
-  q = select(strategy_sets).where(strategy_sets.c.user_id == current_user_id).order_by(strategy_sets.c.id)
-  rows = await database.fetch_all(q)
-  return [StrategySetResponse(**dict(r)) for r in rows]
+@router.get("", response_model=List[StrategySetResponse])
+async def list_sets(
+    exchange: str | None = Query(None),
+    pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user_id),
+):
+    stmt = select(strategy_sets).where(strategy_sets.c.user_id == current_user_id)
+    if exchange:
+        stmt = stmt.where(strategy_sets.c.exchange == exchange.lower())
+    if pair:
+        stmt = stmt.where(strategy_sets.c.pair == pair.upper())
+    rows = await database.fetch_all(stmt)
+    return [dict(r) for r in rows]
 
 @router.post("", response_model=StrategySetResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=StrategySetResponse, status_code=status.HTTP_201_CREATED)
