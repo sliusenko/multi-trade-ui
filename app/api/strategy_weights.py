@@ -26,16 +26,20 @@ class WeightsUpsert(WeightsBase):
 class WeightsResponse(WeightsBase):
     updated_at: datetime | None = None
 
-@router.get("", response_model=List[WeightsResponse])
 @router.get("/", response_model=List[WeightsResponse])
-async def list_weights(current_user_id: int = Depends(get_current_user)):
-    q = (
-        select(strategy_weights)
-        .where(strategy_weights.c.user_id == current_user_id)
-        .order_by(strategy_weights.c.exchange, strategy_weights.c.pair)
-    )
-    rows = await database.fetch_all(q)
-    return [WeightsResponse(**dict(r)) for r in rows]
+@router.get("", response_model=List[StrategyWeightResponse])
+async def list_weights(
+    exchange: str | None = Query(None),
+    pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user_id),
+):
+    stmt = select(strategy_weights).where(strategy_weights.c.user_id == current_user_id)
+    if exchange:
+        stmt = stmt.where(strategy_weights.c.exchange == exchange.lower())
+    if pair:
+        stmt = stmt.where(strategy_weights.c.pair == pair.upper())
+    rows = await database.fetch_all(stmt)
+    return [dict(r) for r in rows]
 
 @router.put("", response_model=WeightsResponse, status_code=status.HTTP_200_OK)
 @router.put("/", response_model=WeightsResponse, status_code=status.HTTP_200_OK)
