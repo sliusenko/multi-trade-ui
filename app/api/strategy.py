@@ -34,16 +34,31 @@ async def list_rules(
     current_user_id: int = Depends(get_current_user),
     admin: bool = Depends(is_admin_user),
 ):
-
-    ex = _normalize_exchange(exchange)
+    ex = _normalize_exchange(exchange)   
     pr = _normalize_pair(pair)
+
     uid = _resolve_user_scope(user_id, current_user_id, admin)
 
-    stmt = select(strategy_rules).where(strategy_sets.c.user_id == uid).order_by(strategy_sets.c.id)
-    if ex is not None:
+    # Базовий селект по таблиці правил
+    stmt = select(strategy_rules)
+
+    # Якщо у strategy_rules є колонка user_id — фільтруємо нею
+    if "user_id" in strategy_rules.c:
+        stmt = stmt.where(strategy_rules.c.user_id == uid)
+
+    if ex is not None and "exchange" in strategy_rules.c:
         stmt = stmt.where(strategy_rules.c.exchange == ex)
-    if pr is not None:
+
+    if pr is not None and "pair" in strategy_rules.c:
         stmt = stmt.where(strategy_rules.c.pair == pr)
+
+    # (опційно) сортування, якщо є поле id або priority
+    if "priority" in strategy_rules.c:
+        stmt = stmt.order_by(strategy_rules.c.priority)
+    elif "id" in strategy_rules.c:
+        stmt = stmt.order_by(strategy_rules.c.id)
+
+    rows = await database.fetch_all(stmt)   # ← ти це пропустив
     return [dict(r) for r in rows]
 
 @router.get("", response_model=List[StrategyRuleResponse])
