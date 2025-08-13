@@ -113,8 +113,14 @@ async function attachRule() {
     method: 'POST',
     body: JSON.stringify({ rule_id: ruleId, priority: prio, enabled: true })
   });
-  if (!res.ok) { alert('Attach failed: ' + res.status); return; }
-  await loadRulesForSelectedSet();
+
+  if (!res.ok) {
+    const txt = await safeText(res);
+    alert(`Attach failed: ${res.status}\n${txt}`);
+    return;
+  }
+
+  await loadRulesForSelectedSet();  // ⬅️ оновлює таблицю
 }
 
 // ==== вмик/вимк правилo у сеті ====
