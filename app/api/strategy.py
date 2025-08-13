@@ -30,7 +30,9 @@ def _normalize_pair(p: str | None) -> str | None:
 async def list_rules(
     exchange: str | None = Query(None),
     pair: str | None = Query(None),
+    user_id: int | None = Query(None),
     current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),
 ):
 
     ex = _normalize_exchange(exchange)
