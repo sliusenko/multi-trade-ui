@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from app.schemas.strategy import StrategyRuleCreate, StrategyRuleUpdate, StrategyRuleResponse
-from app.dependencies import get_current_user, is_admin_user
+from app.dependencies import get_current_user, is_admin_user, _resolve_user_scope
 from sqlalchemy import select, update, delete, text, distinct, and_
 from app.services.db import database
 from app.models import strategy_rules, user_active_pairs
