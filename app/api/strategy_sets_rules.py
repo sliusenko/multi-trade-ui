@@ -10,6 +10,22 @@ from sqlalchemy import select, update, delete, text, distinct, and_
 
 router = APIRouter(prefix="/api/strategy_sets", tags=["Strategy Set Rules"])
 
+# ---- helpers ----
+_ALL_TOKENS = {"", "all", "any", "all pairs", "all users", "all exchanges", "null", "-"}
+
+def _normalize_exchange(ex: str | None) -> str | None:
+    if ex is None:
+        return None
+    ex_norm = ex.strip().lower()
+    return None if ex_norm in _ALL_TOKENS else ex_norm
+
+def _normalize_pair(p: str | None) -> str | None:
+    if p is None:
+        return None
+    p_norm = p.strip()
+    # приймаємо як плейсхолдери: "", "all", "All Pairs", "-", "null"
+    return None if p_norm.lower() in _ALL_TOKENS else p_norm.upper()
+
 @router.get("/{set_id}/rules", response_model=List[SetRuleItem])
 async def list_set_rules(
     set_id: int,
