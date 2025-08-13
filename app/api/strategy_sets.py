@@ -71,20 +71,24 @@ async def update_set(
     pr = _normalize_pair(pair)
     uid = _resolve_user_scope(user_id, current_user_id, admin)
 
+    values = payload.dict(exclude_unset=True)
+    print(f"🔄 PATCH set_id={set_id} by uid={uid} with values={values}, ex={ex}, pr={pr}")
+
     stmt = update(strategy_sets).where(strategy_sets.c.id == set_id, strategy_sets.c.user_id == uid)
     if ex is not None:
         stmt = stmt.where(strategy_sets.c.exchange == ex)
     if pr is not None:
         stmt = stmt.where(strategy_sets.c.pair == pr)
 
-    values = payload.dict(exclude_unset=True)
     res = await database.execute(stmt.values(**values))
     if res == 0:
+        print(f"⚠️  No match: id={set_id}, uid={uid}, ex={ex}, pr={pr} — nothing updated.")
         raise HTTPException(status_code=404, detail="Set not found or not allowed")
 
-    # fetch updated
     fetch_stmt = select(strategy_sets).where(strategy_sets.c.id == set_id)
     row = await database.fetch_one(fetch_stmt)
+
+    print(f"✅ Updated: {dict(row)}")
     return StrategySetResponse(**dict(row))
 
 @router.delete("/{set_id}", status_code=status.HTTP_204_NO_CONTENT)
