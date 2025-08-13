@@ -41,14 +41,36 @@ function setPayloadFromForm() {
 function renderSetRow(st) {
   const tr = document.createElement('tr');
 
+  // 🔘 Чекбокс для активності
+  const activeCheckbox = document.createElement('input');
+  activeCheckbox.type = 'checkbox';
+  activeCheckbox.checked = !!st.active;
+  activeCheckbox.classList.add('form-check-input');
+  activeCheckbox.addEventListener('change', async () => {
+    await updateSet(st.id, {
+      name: st.name ?? '',
+      description: st.description ?? null,
+      exchange: (st.exchange || '').toLowerCase() || null,
+      pair: (st.pair || '').toUpperCase() || null,
+      active: activeCheckbox.checked,
+    });
+  });
+
+  // 📄 Інші клітинки
   const cells = [
     st.id,
     st.name ?? '',
-    st.active ? '✅' : '❌',
+    activeCheckbox,
     st.exchange ?? '',
     st.pair ?? ''
-  ].map(t => { const td = document.createElement('td'); td.textContent = t; return td; });
+  ].map(c => {
+    const td = document.createElement('td');
+    if (c instanceof HTMLElement) td.appendChild(c);
+    else td.textContent = c;
+    return td;
+  });
 
+  // 🛠️ Дії
   const actionsTd = document.createElement('td');
   actionsTd.innerHTML = `
     <div class="btn-group btn-group-sm" role="group">
@@ -62,6 +84,7 @@ function renderSetRow(st) {
   toggleBtn.addEventListener('click', () => toggleSetActive(st));
   delBtn.addEventListener('click', () => deleteSet(st.id));
 
+  // 🧱 Збірка
   cells.forEach(td => tr.appendChild(td));
   tr.appendChild(actionsTd);
   return tr;
