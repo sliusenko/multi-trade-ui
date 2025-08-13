@@ -16,9 +16,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     return 46205214  # Тимчасово фіксований user_id
 
 async def is_admin_user(current_user=Depends(get_current_user)) -> bool:
-    if isinstance(current_user, dict):
-        return bool(current_user.get("is_admin"))
+    uid = current_user["id"] if isinstance(current_user, dict) else int(current_user)
+    row = await database.fetch_one(select(users.c.role).where(users.c.id == uid))
+    return str(row["role"]).lower() in {"admin", "owner", "superuser"} if row else False
 
-    stmt = select(users.c.is_admin).where(users.c.id == current_user)
-    row = await database.fetch_one(stmt)
-    return bool(row["is_admin"]) if row else False
