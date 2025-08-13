@@ -27,14 +27,8 @@ def _normalize_pair(p: str | None) -> str | None:
     return None if p_norm.lower() in _ALL_TOKENS else p_norm.upper()
 
 @router.get("/{set_id}/rules", response_model=List[SetRuleItem])
-async def list_set_rules(
-    set_id: int,
-    user_id: int | None = Query(None),
-    exchange: str | None = Query(None),
-    pair: str | None = Query(None),
-    current_user_id: int = Depends(get_current_user),
-    admin: bool = Depends(is_admin_user),
-):
+async def list_set_rules(set_id: int, user_id: int | None = Query(None), exchange: str | None = Query(None), pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user), admin: bool = Depends(is_admin_user),):
     # нормалізація як у list_sets
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)

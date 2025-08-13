@@ -1,9 +1,3 @@
-// ==== helpers ====
-function getFiltersQS() {
-  const { user_id, exchange, pair } = getActiveFilters(); // твоя існуюча функція
-  return buildQuery({ user_id, exchange, pair });         // твій існуючий хелпер
-}
-
 // ==== селект для "прикріпити правило до сету" ====
 async function refreshAttachSelect(setId) {
   const qs = getFiltersQS();
@@ -12,33 +6,9 @@ async function refreshAttachSelect(setId) {
   const inSetIds = new Set(inSet.map(x => x.rule_id));
   const sel = document.getElementById('ruleSelect');
   sel.innerHTML = all
-    .filter(r => !inSetIds.has(r.id))
+    .filter(r => !inSetIds.has(r.id))  // ⬅️ виключаємо вже прив'язані
     .map(r => `<option value="${r.id}">[${r.id}] ${r.action} ${r.condition_type} ${r.param_1 ?? ''}/${r.param_2 ?? ''}</option>`)
     .join('');
-}
-
-// ==== оновлення дропдауну правил з урахуванням фільтрів ====
-async function refreshAttachRuleDropdown() {
-  const qs = getFiltersQS();
-  const res = await apiFetch(`/api/strategy_rules${qs}`);
-  if (!res.ok) return;
-  const rules = await res.json();
-
-  const ruleSelect = document.getElementById('ruleSelect');
-  if (ruleSelect) {
-    const keep = ruleSelect.value;
-    ruleSelect.innerHTML = '';
-    rules.forEach(r => {
-      const o = document.createElement('option');
-      const suffix = [r.exchange, r.pair].filter(Boolean).join(' ');
-      o.value = r.id;
-      o.textContent = suffix ? `${r.action} ${r.condition_type} (${suffix})` : `${r.action} ${r.condition_type}`;
-      ruleSelect.appendChild(o);
-    });
-    if (keep && [...ruleSelect.options].some(o => o.value === keep)) {
-      ruleSelect.value = keep;
-    }
-  }
 }
 
 // ==== завантаження списку сетів у селект (з фільтрами) ====
@@ -61,17 +31,15 @@ async function loadSetsIntoSelect() {
   await loadRulesForSelectedSet();
 }
 
-// ==== завантаження правил для вибраного сету (з фільтрами) ====
+// ==== завантаження правил для вибраного сету ====
 async function loadRulesForSelectedSet() {
   const setId = document.getElementById('setSelect').value;
   if (!setId) return;
 
   const qs = getFiltersQS();
 
-  // підтягнути всі правила (для дропдауну додавання)
-  const allRules = await (await apiFetch(`/api/strategy_rules${qs}`)).json();
-  document.getElementById('ruleSelect').innerHTML =
-    allRules.map(r => `<option value="${r.id}">[${r.id}] ${r.action} ${r.condition_type} ${r.param_1 ?? ''}/${r.param_2 ?? ''}</option>`).join('');
+  // оновити селект правил
+  await refreshAttachSelect(setId);
 
   // підтягнути правила в сеті
   const res = await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`);
@@ -113,36 +81,62 @@ async function attachRule() {
     method: 'POST',
     body: JSON.stringify({ rule_id: ruleId, priority: prio, enabled: true })
   });
-  if (!res.ok) { alert('Attach failed: ' + res.status); return; }
-  await loadRulesForSelectedSet();
+
+  if (!res.ok) {
+    const txt = await safeText(res);
+    alert(`Attach failed: ${res.status}\n${txt}`);
+    return;
+  }
+
+  await loadRulesForSelectedSet();  // ✅ оновити таблицю
 }
 
-// ==== вмик/вимк правилo у сеті ====
+// ==== вмик/вимк правила ====
 async function toggleEnabled(setId, ruleId, enabled) {
   const qs = getFiltersQS();
-  await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, {
+  const res = await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, {
     method: 'PATCH',
     body: JSON.stringify({ enabled })
   });
+  if (!res.ok) {
+    const txt = await safeText(res);
+    alert(`Enable toggle failed: ${res.status}\n${txt}`);
+    return;
+  }
+  await loadRulesForSelectedSet();  // ✅ обов’язково оновити таблицю
 }
 
-// ==== зміна пріоритету правила у сеті (debounce можна залишити зовнішнім) ====
+// ==== зміна пріоритету ====
 async function updatePriority(setId, ruleId, priority) {
   const qs = getFiltersQS();
-  await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, {
+  const res = await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, {
     method: 'PATCH',
     body: JSON.stringify({ priority: parseInt(priority || '0', 10) })
   });
+  if (!res.ok) {
+    const txt = await safeText(res);
+    alert(`Priority update failed: ${res.status}\n${txt}`);
+    return;
+  }
+  await loadRulesForSelectedSet();  // ✅
 }
 
-// ==== відкріпити правило від сету ====
+// ==== відʼєднати правило ====
 async function detachRule(setId, ruleId) {
   if (!confirm('Remove rule from set?')) return;
   const qs = getFiltersQS();
-  await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, { method: 'DELETE' });
-  await loadRulesForSelectedSet();
+  const res = await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const txt = await safeText(res);
+    alert(`Detach failed: ${res.status}\n${txt}`);
+    return;
+  }
+  await loadRulesForSelectedSet();  // ✅
 }
 
-// ==== виклик при завантаженні сторінки ====
+// ==== старт ====
 loadSetsIntoSelect();
-window.refreshAttachRuleDropdown = refreshAttachRuleDropdown;
+window.refreshAttachRuleDropdown = () => {
+  const setId = document.getElementById('setSelect')?.value;
+  if (setId) refreshAttachSelect(setId);
+};
