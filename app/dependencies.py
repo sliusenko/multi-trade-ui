@@ -32,6 +32,3 @@ def _resolve_user_scope(
         return requested_user_id
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-# app/dependencies.py
-def resolve_user_scope(requested_user_id: int | None, current_user_id: int, is_admin: bool) -> int:
-    return _resolve_user_scope(requested_user_id, current_user_id, is_admin)
