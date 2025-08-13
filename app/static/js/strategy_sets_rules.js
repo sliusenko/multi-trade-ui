@@ -103,15 +103,6 @@ async function loadRulesForSelectedSet() {
 }
 
 // ==== додати правило в сет ====
-//await apiFetch(`/api/strategy_sets/${setId}/rules`, {
-//  method: 'POST',
-//  body: JSON.stringify({
-//    rule_id: createdRuleId,
-//    enabled: true,
-//    priority: 100
-//  })
-//});
-
 async function attachRule() {
   const setId = document.getElementById('setSelect').value;
   const ruleId = parseInt(document.getElementById('ruleSelect').value);

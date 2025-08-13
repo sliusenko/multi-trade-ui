@@ -92,20 +92,6 @@ function renderRuleRow(rule) {
 }
 
 // ====== Create ======
-//await apiFetch('/api/strategy_rules', {
-//  method: 'POST',
-//  body: JSON.stringify({
-//    action: 'BUY',                    // чи SELL
-//    condition_type: 'RSI_LT',        // або PRICE_GT_SMA тощо
-//    param_1: 30,
-//    param_2: null,
-//    enabled: true,
-//    exchange: 'binance',
-//    pair: 'BTCUSDT',
-//    priority: 100
-//  })
-//});
-
 async function addRule() {
   console.log('[addRule] called');
   const body = payloadFromForm();
