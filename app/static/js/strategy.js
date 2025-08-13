@@ -10,6 +10,7 @@ async function apiFetch(url, options = {}) {
 }
 
 function val(id) { return document.getElementById(id)?.value?.trim() ?? ""; }
+
 function bool(id) { return !!document.getElementById(id)?.checked; }
 
 function parsePriority(raw) {

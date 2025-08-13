@@ -1,34 +1,7 @@
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('access_token');
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
-}
-
-async function loadUsers() {
-  const res = await apiFetch('/api/config/users');
-  if (!res.ok) {
-    alert('❌ Failed to load users: ' + res.status);
-    return;
-  }
-  const users = await res.json();
-  const tbody = document.getElementById('usersTable');
-  tbody.innerHTML = '';
-
-  users.forEach(user => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${user.user_id}</td>
-      <td>${user.username}</td>
-      <td>${user.email}</td>
-      <td>${user.role}</td>
-      <td>
-        <button class="btn btn-sm btn-warning" onclick='openEditUser(${JSON.stringify(user)})'>Edit</button>
-        <button class="btn btn-sm btn-danger" onclick='deleteUser(${user.user_id})'>Delete</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+function showTab(tab) {
+  document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("btn-primary"));
+  document.querySelector(`button[onclick="showTab('${tab}')"]`).classList.add("btn-primary");
+  document.getElementById('users-tab').style.display = tab === 'users' ? 'block' : 'none';
 }
 
 function openAddUserForm() {
@@ -92,11 +65,40 @@ async function deleteUser(user_id) {
   }
 }
 
-function showTab(tab) {
-  document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("btn-primary"));
-  document.querySelector(`button[onclick="showTab('${tab}')"]`).classList.add("btn-primary");
-  document.getElementById('users-tab').style.display = tab === 'users' ? 'block' : 'none';
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('access_token');
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
 }
+
+async function loadUsers() {
+  const res = await apiFetch('/api/config/users');
+  if (!res.ok) {
+    alert('❌ Failed to load users: ' + res.status);
+    return;
+  }
+  const users = await res.json();
+  const tbody = document.getElementById('usersTable');
+  tbody.innerHTML = '';
+
+  users.forEach(user => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${user.user_id}</td>
+      <td>${user.username}</td>
+      <td>${user.email}</td>
+      <td>${user.role}</td>
+      <td>
+        <button class="btn btn-sm btn-warning" onclick='openEditUser(${JSON.stringify(user)})'>Edit</button>
+        <button class="btn btn-sm btn-danger" onclick='deleteUser(${user.user_id})'>Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
 
 window.addEventListener('DOMContentLoaded', () => {
   if (!checkAuth()) return;
