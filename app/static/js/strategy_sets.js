@@ -166,14 +166,6 @@ async function loadSets() {
   }
 }
 
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('access_token');
-  const headers = options.headers || {};
-  headers['Content-Type'] = 'application/json';
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
-}
-
 async function updateSet(id, body) {
   console.log('[updateSet] called', id, body);
   let res = await apiFetch(`/api/strategy_sets/${id}`, {

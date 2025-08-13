@@ -1,14 +1,6 @@
 // ===== strategy.js =====
 console.log('[strategy.js] loaded');
 
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('access_token');
-  const headers = options.headers || {};
-  headers['Content-Type'] = 'application/json';
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
-}
-
 function val(id) { return document.getElementById(id)?.value?.trim() ?? ""; }
 
 function bool(id) { return !!document.getElementById(id)?.checked; }

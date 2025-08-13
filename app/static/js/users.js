@@ -65,13 +65,6 @@ async function deleteUser(user_id) {
   }
 }
 
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('access_token');
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
-}
-
 async function loadUsers() {
   const res = await apiFetch('/api/config/users');
   if (!res.ok) {
@@ -97,8 +90,6 @@ async function loadUsers() {
     tbody.appendChild(tr);
   });
 }
-
-
 
 window.addEventListener('DOMContentLoaded', () => {
   if (!checkAuth()) return;
