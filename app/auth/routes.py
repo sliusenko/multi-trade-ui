@@ -4,8 +4,8 @@ from sqlalchemy import insert, select
 from datetime import timedelta
 from app.models import users
 from app.auth.jwt_handler import create_access_token, get_password_hash, verify_password
-from app.auth.dependencies import get_db, get_current_user
-from app.auth.schemas import RegisterRequest, LoginRequest
+from app.dependencies import get_db
+from app.schemas.user_config import RegisterRequest, LoginRequest
 
 router = APIRouter(tags=["Auth"])
 ACCESS_TOKEN_EXPIRE_MINUTES = 60

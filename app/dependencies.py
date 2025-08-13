@@ -1,8 +1,9 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from app.services.db import database
+from app.services.db import database, SessionLocal
 from app.models import users
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -32,3 +33,6 @@ def _resolve_user_scope(
         return requested_user_id
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
+async def get_db():
+    async with SessionLocal() as session:
+        yield session

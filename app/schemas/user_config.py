@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from pydantic import BaseModel, EmailStr
 
 class UserBase(BaseModel):
     username: str
@@ -20,3 +21,12 @@ class UserOut(UserBase):
 
     class Config:
         from_attributes = True  # ✅ для Pydantic v2, замість orm_mode
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    email: EmailStr
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
