@@ -25,45 +25,51 @@ class StrategySetUpdate(StrategySetBase):
 class StrategySetResponse(StrategySetBase):
   id: int
 
+# ---- helpers ----
+_ALL_TOKENS = {"", "all", "any", "all pairs", "all users", "all exchanges", "null", "-"}
+
 def _normalize_exchange(ex: str | None) -> str | None:
-    return ex.lower() if ex else None
+    if ex is None:
+        return None
+    ex_norm = ex.strip().lower()
+    return None if ex_norm in _ALL_TOKENS else ex_norm
 
 def _normalize_pair(p: str | None) -> str | None:
-    return p.upper() if p else None
+    if p is None:
+        return None
+    p_norm = p.strip()
+    # приймаємо як плейсхолдери: "", "all", "All Pairs", "-", "null"
+    return None if p_norm.lower() in _ALL_TOKENS else p_norm.upper()
 
 def _resolve_user_scope(
     requested_user_id: int | None,
     current_user_id: int,
     is_admin: bool,
 ) -> int:
-    if requested_user_id is None or requested_user_id == current_user_id:
+    # якщо фронт шле user_id=0 або "all" — трактуємо як None
+    if requested_user_id in (None, 0):
         return current_user_id
-    if not is_admin:
-        # не дозволяємо дивитись чужі дані
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    return requested_user_id
+    if requested_user_id == current_user_id or is_admin:
+        return requested_user_id
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 @router.get("/", response_model=list[StrategySetResponse])
 @router.get("",  response_model=list[StrategySetResponse])
 async def list_sets(
     exchange: str | None = Query(None),
     pair: str | None = Query(None),
-    user_id: int | None = Query(None),                 # <- додаємо
+    user_id: int | None = Query(None),
     current_user_id: int = Depends(get_current_user),
-    admin: bool = Depends(is_admin_user),              # <- твоя перевірка адміна
+    admin: bool = Depends(is_admin_user),
 ):
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)
     uid = _resolve_user_scope(user_id, current_user_id, admin)
 
-    stmt = (
-        select(strategy_sets)
-        .where(strategy_sets.c.user_id == uid)
-        .order_by(strategy_sets.c.id)
-    )
-    if ex:
+    stmt = select(strategy_sets).where(strategy_sets.c.user_id == uid).order_by(strategy_sets.c.id)
+    if ex is not None:
         stmt = stmt.where(strategy_sets.c.exchange == ex)
-    if pr:
+    if pr is not None:
         stmt = stmt.where(strategy_sets.c.pair == pr)
 
     rows = await database.fetch_all(stmt)
