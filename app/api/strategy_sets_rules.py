@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate, SetRuleCreate
+from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate, SetRuleCreate, ReorderPayload
 from app.services.db import database
 from app.models import strategy_sets_rules, strategy_rules, strategy_sets
 from app.dependencies import get_current_user, is_admin_user, _resolve_user_scope
@@ -144,9 +144,6 @@ async def update_set_rule(set_id: int, rule_id: int, body: SetRuleUpdate, uid: i
         raise HTTPException(404, "Link not found")
     items = await list_set_rules(set_id, uid)
     return next(i for i in items if i.rule_id == rule_id)
-
-class ReorderPayload(BaseModel):
-    rule_ids: List[int]
 
 @router.post("/{set_id}/rules/reorder")
 async def reorder_rules(set_id: int, payload: ReorderPayload, uid: int = Depends(get_current_user)):

@@ -63,6 +63,9 @@ class StrategySetRuleUpdate(BaseModel):
 
 class StrategySetRuleResponse(StrategySetRuleBase): pass
 
+class ReorderPayload(BaseModel):
+    rule_ids: List[int]
+
 
 # app/schemas/strategy_weights.py
 class StrategyWeightsBase(BaseModel):
