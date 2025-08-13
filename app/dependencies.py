@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from app.db import database
+from app.services.db import database
 from app.models import users
 from sqlalchemy import select
 
