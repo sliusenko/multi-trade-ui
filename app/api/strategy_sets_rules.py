@@ -5,20 +5,41 @@ from typing import List, Optional
 from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate, SetRuleCreate
 from app.services.db import database
 from app.models import strategy_sets_rules, strategy_rules, strategy_sets
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, is_admin_user, resolve_user_scope
 from sqlalchemy import select, update, delete, text, distinct, and_
 
 router = APIRouter(prefix="/api/strategy_sets", tags=["Strategy Set Rules"])
 
 @router.get("/{set_id}/rules", response_model=List[SetRuleItem])
-async def list_set_rules(set_id: int, uid: int = Depends(get_current_user)):
-    # перевіримо право доступу до сету
-    exists_q = select(strategy_sets.c.id).where(
-        strategy_sets.c.id == set_id, strategy_sets.c.user_id == uid
-    )
-    if not await database.fetch_one(exists_q):
-        raise HTTPException(404, "Set not found")
+async def list_set_rules(
+    set_id: int,
+    user_id: int | None = Query(None),
+    exchange: str | None = Query(None),
+    pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),
+):
+    # нормалізація як у list_sets
+    ex = _normalize_exchange(exchange)
+    pr = _normalize_pair(pair)
 
+    # визначаємо фактичний uid згідно з твоїм resolve
+    uid = resolve_user_scope(user_id, current_user_id, admin)
+
+    # 1) перевіряємо, що сет існує і належить uid (+ опц. фільтри за біржею/парою)
+    exists_q = select(strategy_sets.c.id).where(
+        strategy_sets.c.id == set_id,
+        strategy_sets.c.user_id == uid,
+    )
+    if ex is not None:
+        exists_q = exists_q.where(strategy_sets.c.exchange == ex)
+    if pr is not None:
+        exists_q = exists_q.where(strategy_sets.c.pair == pr)
+
+    if not await database.fetch_one(exists_q):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Set not found")
+
+    # 2) тягнемо правила через join, фільтруючи власника через strategy_sets
     q = (
         select(
             strategy_sets_rules.c.rule_id,
@@ -28,17 +49,24 @@ async def list_set_rules(set_id: int, uid: int = Depends(get_current_user)):
             strategy_rules.c.param_2,
             strategy_sets_rules.c.enabled,
             strategy_sets_rules.c.priority,
-#            strategy_sets_rules.c.note,
+            # strategy_sets_rules.c.note,  # якщо є у схемі
         )
-        .select_from(strategy_sets_rules.join(
-            strategy_rules, strategy_rules.c.id == strategy_sets_rules.c.rule_id
-        ))
+        .select_from(
+            strategy_sets_rules
+            .join(strategy_sets, strategy_sets.c.id == strategy_sets_rules.c.set_id)
+            .join(strategy_rules, strategy_rules.c.id == strategy_sets_rules.c.rule_id)
+        )
         .where(
-            strategy_sets_rules.c.user_id == uid,
-            strategy_sets_rules.c.set_id == set_id,
+            strategy_sets.c.id == set_id,
+            strategy_sets.c.user_id == uid,
         )
         .order_by(strategy_sets_rules.c.priority, strategy_rules.c.id)
     )
+    if ex is not None:
+        q = q.where(strategy_sets.c.exchange == ex)
+    if pr is not None:
+        q = q.where(strategy_sets.c.pair == pr)
+
     rows = await database.fetch_all(q)
     return [SetRuleItem(**dict(r)) for r in rows]
 
