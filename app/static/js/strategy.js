@@ -83,7 +83,7 @@ function renderRuleRow(rule) {
   const [editBtn, toggleBtn, delBtn] = actionsTd.querySelectorAll('button');
 
   editBtn.addEventListener('click', () => openEditRule(rule));
-  toggleBtn.addEventListener('click', () => toggleEnabled(rule));
+  toggleBtn.addEventListener('click', () => toggleEnabledSets_Rules(rule));
   delBtn.addEventListener('click', () => deleteRule(rule.id));
 
   cells.forEach(td => tr.appendChild(td));
@@ -200,22 +200,21 @@ async function updateRule(id, body) {
 }
 
 // ====== Toggle ======
-async function toggleEnabled(rule) {
-  // сформуємо повне тіло, як очікує бекенд
+async function toggleEnabledSets_Rules(rule) {
   const body = {
     action: (rule.action || '').trim(),
     condition_type: (rule.condition_type || '').trim(),
-    param_1: (rule.param_1 ?? '') || null,
-    param_2: (rule.param_2 ?? '') || null,
+    param_1: isFinite(rule.param_1) ? parseFloat(rule.param_1) : null,
+    param_2: isFinite(rule.param_2) ? parseFloat(rule.param_2) : null,
     exchange: (rule.exchange || '').toLowerCase() || null,
     pair: (rule.pair || '').toUpperCase() || null,
     priority: rule.priority ?? null,
-    enabled: !rule.enabled, // <- міняємо статус тут
+    enabled: !rule.enabled,
   };
 
   try {
     const res = await apiFetch(`/api/strategy_rules/${rule.id}`, {
-      method: 'PUT',            // якщо у тебе PATCH — поміняй тут і на бекенді
+      method: 'PUT',
       body: JSON.stringify(body),
     });
 
@@ -312,7 +311,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 window.loadRules = loadRules;
 window.addRule = addRule;
 window.updateRule = updateRule;
-window.toggleEnabled = toggleEnabled;
+window.toggleEnabledSets_Rules = toggleEnabledSets_Rules;
 window.deleteRule = deleteRule;
 window.openEditRule = openEditRule;
 window.getActiveFilters = function () {
