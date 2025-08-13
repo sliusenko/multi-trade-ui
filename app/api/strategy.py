@@ -32,6 +32,11 @@ async def list_rules(
     pair: str | None = Query(None),
     current_user_id: int = Depends(get_current_user),
 ):
+
+    ex = _normalize_exchange(exchange)
+    pr = _normalize_pair(pair)
+    uid = _resolve_user_scope(user_id, current_user_id, admin)
+    
     stmt = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
     if exchange:
         stmt = stmt.where(strategy_rules.c.exchange == exchange.lower())
