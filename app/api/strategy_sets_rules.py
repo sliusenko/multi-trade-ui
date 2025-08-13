@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.schemas.strategy_sets import SetRuleItem, SetRuleUpdate, SetRuleCreate
 from app.services.db import database
 from app.models import strategy_sets_rules, strategy_rules, strategy_sets
-from app.dependencies import get_current_user, is_admin_user, resolve_user_scope
+from app.dependencies import get_current_user, is_admin_user, _resolve_user_scope
 from sqlalchemy import select, update, delete, text, distinct, and_
 
 router = APIRouter(prefix="/api/strategy_sets", tags=["Strategy Set Rules"])
@@ -22,9 +22,7 @@ async def list_set_rules(
     # нормалізація як у list_sets
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)
-
-    # визначаємо фактичний uid згідно з твоїм resolve
-    uid = resolve_user_scope(user_id, current_user_id, admin)
+    uid = _resolve_user_scope(user_id, current_user_id, admin)
 
     # 1) перевіряємо, що сет існує і належить uid (+ опц. фільтри за біржею/парою)
     exists_q = select(strategy_sets.c.id).where(
