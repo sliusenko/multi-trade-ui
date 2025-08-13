@@ -1,51 +1,6 @@
 function getFiltersQS() {
   const { user_id, exchange, pair } = getActiveFilters();
-  return buildQuery({ user_id, exchange, pair }); // -> "?user_id=...&exchange=...&pair=..."
-}
-
-// стару refreshAttachSelect ПЕРЕПИШИ або взагалі не використовуй
-async function refreshAttachSelect(setId) {
-  const qs = getFiltersQS();
-  const all = await (await apiFetch(`/api/strategy_rules${qs}`)).json();
-  const inSet = await (await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`)).json();
-  const inSetIds = new Set(inSet.map(x => x.rule_id));
-  const sel = document.getElementById('ruleSelect');
-  sel.innerHTML = all
-    .filter(r => !inSetIds.has(r.id))
-    .map(r => `<option value="${r.id}">[${r.id}] ${r.action} ${r.condition_type} ${r.param_1 ?? ''}/${r.param_2 ?? ''}</option>`)
-    .join('');
-}
-
-async function refreshAttachRuleDropdown() {
-  const qs = getFiltersQS();
-  const res = await apiFetch(`/api/strategy_rules${qs}`);
-  if (!res.ok) return;
-  const rules = await res.json();
-  const ruleSelect = document.getElementById('ruleSelect');
-  if (ruleSelect) {
-    const keep = ruleSelect.value;
-    ruleSelect.innerHTML = '';
-    rules.forEach(r => {
-      const o = document.createElement('option');
-      const suffix = [r.exchange, r.pair].filter(Boolean).join(' ');
-      o.value = r.id;
-      o.textContent = suffix ? `${r.action} ${r.condition_type} (${suffix})` : `${r.action} ${r.condition_type}`;
-      ruleSelect.appendChild(o);
-    });
-    if (keep && [...ruleSelect.options].some(o => o.value === keep)) ruleSelect.value = keep;
-  }
-}
-
-async function loadSetsIntoSelect() {
-  const qs = getFiltersQS();
-  const res = await apiFetch(`/api/strategy_sets${qs}`);
-  const sets = await res.json();
-  const sel = document.getElementById('setSelect');
-  const keep = sel.value;
-  sel.innerHTML = sets.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
-  sel.onchange = loadRulesForSelectedSet;
-  await loadRulesForSelectedSet();
+  return buildQuery({ user_id, exchange, pair });
 }
 
 async function loadRulesForSelectedSet() {
@@ -57,38 +12,19 @@ async function loadRulesForSelectedSet() {
   document.getElementById('ruleSelect').innerHTML =
     allRules.map(r => `<option value="${r.id}">[${r.id}] ${r.action} ${r.condition_type} ${r.param_1 ?? ''}/${r.param_2 ?? ''}</option>`).join('');
 
-  const res = await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`);
+  const res = await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`);  // ← тут був запит без QS
   const items = await res.json();
-  const tbody = document.getElementById('setRulesTbody');
-  tbody.innerHTML = '';
-  items.forEach(it => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${it.rule_id}</td>
-      <td>${it.action}</td>
-      <td>${it.condition_type}</td>
-      <td>${it.param_1 ?? ''}</td>
-      <td>${it.param_2 ?? ''}</td>
-      <td><input type="number" class="form-control form-control-sm" value="${it.priority}" style="width:90px"
-                 onchange="updatePriority(${setId}, ${it.rule_id}, this.value)"></td>
-      <td><input type="checkbox" ${it.enabled ? 'checked' : ''}
-                 onchange="toggleEnabled(${setId}, ${it.rule_id}, this.checked)"></td>
-      <td><button class="btn btn-sm btn-outline-danger" onclick="detachRule(${setId}, ${it.rule_id})">Remove</button></td>`;
-    tbody.appendChild(tr);
-  });
+  ...
 }
 
 async function attachRule() {
   const setId = document.getElementById('setSelect').value;
-  const ruleId = parseInt(document.getElementById('ruleSelect').value);
-  const prio = parseInt(document.getElementById('rulePriority').value || '100');
+  const ruleId = +document.getElementById('ruleSelect').value;
+  const prio = +(document.getElementById('rulePriority').value || '100');
   const qs = getFiltersQS();
-  const res = await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`, {
-    method: 'POST',
-    body: JSON.stringify({ rule_id: ruleId, priority: prio, enabled: true })
+  await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`, {
+    method: 'POST', body: JSON.stringify({ rule_id: ruleId, priority: prio, enabled: true })
   });
-  if (!res.ok) { alert('Attach failed: ' + res.status); return; }
-  await loadRulesForSelectedSet();
 }
 
 async function toggleEnabled(setId, ruleId, enabled) {
@@ -106,8 +42,121 @@ async function updatePriority(setId, ruleId, priority) {
 }
 
 async function detachRule(setId, ruleId) {
-  if (!confirm('Remove rule from set?')) return;
   const qs = getFiltersQS();
   await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, { method: 'DELETE' });
   await loadRulesForSelectedSet();
 }
+
+// function getFiltersQS() {
+//   const { user_id, exchange, pair } = getActiveFilters();
+//   return buildQuery({ user_id, exchange, pair }); // -> "?user_id=...&exchange=...&pair=..."
+// }
+
+// // стару refreshAttachSelect ПЕРЕПИШИ або взагалі не використовуй
+// async function refreshAttachSelect(setId) {
+//   const qs = getFiltersQS();
+//   const all = await (await apiFetch(`/api/strategy_rules${qs}`)).json();
+//   const inSet = await (await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`)).json();
+//   const inSetIds = new Set(inSet.map(x => x.rule_id));
+//   const sel = document.getElementById('ruleSelect');
+//   sel.innerHTML = all
+//     .filter(r => !inSetIds.has(r.id))
+//     .map(r => `<option value="${r.id}">[${r.id}] ${r.action} ${r.condition_type} ${r.param_1 ?? ''}/${r.param_2 ?? ''}</option>`)
+//     .join('');
+// }
+
+// async function refreshAttachRuleDropdown() {
+//   const qs = getFiltersQS();
+//   const res = await apiFetch(`/api/strategy_rules${qs}`);
+//   if (!res.ok) return;
+//   const rules = await res.json();
+//   const ruleSelect = document.getElementById('ruleSelect');
+//   if (ruleSelect) {
+//     const keep = ruleSelect.value;
+//     ruleSelect.innerHTML = '';
+//     rules.forEach(r => {
+//       const o = document.createElement('option');
+//       const suffix = [r.exchange, r.pair].filter(Boolean).join(' ');
+//       o.value = r.id;
+//       o.textContent = suffix ? `${r.action} ${r.condition_type} (${suffix})` : `${r.action} ${r.condition_type}`;
+//       ruleSelect.appendChild(o);
+//     });
+//     if (keep && [...ruleSelect.options].some(o => o.value === keep)) ruleSelect.value = keep;
+//   }
+// }
+
+// async function loadSetsIntoSelect() {
+//   const qs = getFiltersQS();
+//   const res = await apiFetch(`/api/strategy_sets${qs}`);
+//   const sets = await res.json();
+//   const sel = document.getElementById('setSelect');
+//   const keep = sel.value;
+//   sel.innerHTML = sets.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+//   if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+//   sel.onchange = loadRulesForSelectedSet;
+//   await loadRulesForSelectedSet();
+// }
+
+// async function loadRulesForSelectedSet() {
+//   const setId = document.getElementById('setSelect').value;
+//   if (!setId) return;
+//   const qs = getFiltersQS();
+
+//   const allRules = await (await apiFetch(`/api/strategy_rules${qs}`)).json();
+//   document.getElementById('ruleSelect').innerHTML =
+//     allRules.map(r => `<option value="${r.id}">[${r.id}] ${r.action} ${r.condition_type} ${r.param_1 ?? ''}/${r.param_2 ?? ''}</option>`).join('');
+
+//   const res = await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`);
+//   const items = await res.json();
+//   const tbody = document.getElementById('setRulesTbody');
+//   tbody.innerHTML = '';
+//   items.forEach(it => {
+//     const tr = document.createElement('tr');
+//     tr.innerHTML = `
+//       <td>${it.rule_id}</td>
+//       <td>${it.action}</td>
+//       <td>${it.condition_type}</td>
+//       <td>${it.param_1 ?? ''}</td>
+//       <td>${it.param_2 ?? ''}</td>
+//       <td><input type="number" class="form-control form-control-sm" value="${it.priority}" style="width:90px"
+//                  onchange="updatePriority(${setId}, ${it.rule_id}, this.value)"></td>
+//       <td><input type="checkbox" ${it.enabled ? 'checked' : ''}
+//                  onchange="toggleEnabled(${setId}, ${it.rule_id}, this.checked)"></td>
+//       <td><button class="btn btn-sm btn-outline-danger" onclick="detachRule(${setId}, ${it.rule_id})">Remove</button></td>`;
+//     tbody.appendChild(tr);
+//   });
+// }
+
+// async function attachRule() {
+//   const setId = document.getElementById('setSelect').value;
+//   const ruleId = parseInt(document.getElementById('ruleSelect').value);
+//   const prio = parseInt(document.getElementById('rulePriority').value || '100');
+//   const qs = getFiltersQS();
+//   const res = await apiFetch(`/api/strategy_sets/${setId}/rules${qs}`, {
+//     method: 'POST',
+//     body: JSON.stringify({ rule_id: ruleId, priority: prio, enabled: true })
+//   });
+//   if (!res.ok) { alert('Attach failed: ' + res.status); return; }
+//   await loadRulesForSelectedSet();
+// }
+
+// async function toggleEnabled(setId, ruleId, enabled) {
+//   const qs = getFiltersQS();
+//   await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, {
+//     method: 'PATCH', body: JSON.stringify({ enabled })
+//   });
+// }
+
+// async function updatePriority(setId, ruleId, priority) {
+//   const qs = getFiltersQS();
+//   await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, {
+//     method: 'PATCH', body: JSON.stringify({ priority: parseInt(priority || '0', 10) })
+//   });
+// }
+
+// async function detachRule(setId, ruleId) {
+//   if (!confirm('Remove rule from set?')) return;
+//   const qs = getFiltersQS();
+//   await apiFetch(`/api/strategy_sets/${setId}/rules/${ruleId}${qs}`, { method: 'DELETE' });
+//   await loadRulesForSelectedSet();
+// }
