@@ -27,13 +27,8 @@ def _normalize_pair(p: str | None) -> str | None:
 
 @router.get("/", response_model=list[StrategySetResponse])
 @router.get("",  response_model=list[StrategySetResponse])
-async def list_sets(
-    exchange: str | None = Query(None),
-    pair: str | None = Query(None),
-    user_id: int | None = Query(None),
-    current_user_id: int = Depends(get_current_user),
-    admin: bool = Depends(is_admin_user),
-):
+async def list_sets(exchange: str | None = Query(None), pair: str | None = Query(None), user_id: int | None = Query(None), current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),):
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)
     uid = _resolve_user_scope(user_id, current_user_id, admin)
@@ -58,15 +53,8 @@ async def create_set(payload: StrategySetCreate, current_user_id: int = Depends(
 
 @router.put("/{set_id}", response_model=StrategySetResponse)
 @router.patch("/{set_id}", response_model=StrategySetResponse)
-async def update_set(
-    set_id: int,
-    payload: StrategySetUpdate,
-    exchange: str | None = Query(None),
-    pair: str | None = Query(None),
-    user_id: int | None = Query(None),
-    current_user_id: int = Depends(get_current_user),
-    admin: bool = Depends(is_admin_user),
-):
+async def update_set(set_id: int, payload: StrategySetUpdate, exchange: str | None = Query(None), pair: str | None = Query(None),
+    user_id: int | None = Query(None), current_user_id: int = Depends(get_current_user), admin: bool = Depends(is_admin_user),):
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)
     uid = _resolve_user_scope(user_id, current_user_id, admin)
