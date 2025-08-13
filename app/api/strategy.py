@@ -38,13 +38,12 @@ async def list_rules(
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)
     uid = _resolve_user_scope(user_id, current_user_id, admin)
-    
-    stmt = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
-    if exchange:
-        stmt = stmt.where(strategy_rules.c.exchange == exchange.lower())
-    if pair:
-        stmt = stmt.where(strategy_rules.c.pair == pair.upper())
-    rows = await database.fetch_all(stmt)
+
+    stmt = select(strategy_rules).where(strategy_sets.c.user_id == uid).order_by(strategy_sets.c.id)
+    if ex is not None:
+        stmt = stmt.where(strategy_rules.c.exchange == ex)
+    if pr is not None:
+        stmt = stmt.where(strategy_rules.c.pair == pr)
     return [dict(r) for r in rows]
 
 @router.get("", response_model=List[StrategyRuleResponse])
