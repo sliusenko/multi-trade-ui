@@ -9,6 +9,22 @@ from app.models import strategy_rules, user_active_pairs
 
 router = APIRouter(prefix="/api/strategy_rules", tags=["Strategy Rules"])
 
+# ---- helpers ----
+_ALL_TOKENS = {"", "all", "any", "all pairs", "all users", "all exchanges", "null", "-"}
+
+def _normalize_exchange(ex: str | None) -> str | None:
+    if ex is None:
+        return None
+    ex_norm = ex.strip().lower()
+    return None if ex_norm in _ALL_TOKENS else ex_norm
+
+def _normalize_pair(p: str | None) -> str | None:
+    if p is None:
+        return None
+    p_norm = p.strip()
+    # приймаємо як плейсхолдери: "", "all", "All Pairs", "-", "null"
+    return None if p_norm.lower() in _ALL_TOKENS else p_norm.upper()
+
 # ---- GET (list) ----
 @router.get("", response_model=List[StrategyRuleResponse])
 async def list_rules(
