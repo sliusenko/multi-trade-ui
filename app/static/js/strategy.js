@@ -259,6 +259,7 @@ function getActiveFilters() {
     pair: document.getElementById('filter_pair')?.value || ''
   };
 }
+
 function buildQuery(params) {
   const usp = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => v && usp.append(k, v));
@@ -293,8 +294,6 @@ window.apiFetch ??= async function(url, options = {}) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return fetch(url, { ...options, headers });
 };
-
-
 window.addEventListener('DOMContentLoaded', async () => {
   console.log('[init] DOM ready');
 
@@ -308,8 +307,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { if (typeof loadSets === 'function')  await loadSets();  } catch(e){ console.error('loadSets err', e); }
   try { if (typeof loadWeights === 'function') await loadWeights(); } catch(e){ console.error('loadWeights err', e); }
 });
-
-// глобальні хелпери
+window.loadRules = loadRules;
+window.addRule = addRule;
+window.updateRule = updateRule;
+window.toggleEnabled = toggleEnabled;
+window.deleteRule = deleteRule;
+window.openEditRule = openEditRule;
 window.getActiveFilters = function () {
   return {
     user_id: document.getElementById('filter_user')?.value || '',
@@ -323,11 +326,3 @@ window.buildQuery = function (params) {
   const qs = usp.toString();
   return qs ? `?${qs}` : '';
 };
-
-// Експортуємо у глобал (не обов’язково, але хай буде)
-window.loadRules = loadRules;
-window.addRule = addRule;
-window.updateRule = updateRule;
-window.toggleEnabled = toggleEnabled;
-window.deleteRule = deleteRule;
-window.openEditRule = openEditRule;

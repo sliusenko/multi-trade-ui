@@ -1,12 +1,27 @@
 // ===== strategy_sets.js =====
 console.log('[strategy_sets.js] loaded');
 
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('access_token');
-  const headers = options.headers || {};
-  headers['Content-Type'] = 'application/json';
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
+function openEditSet(st) {
+  window.__editSetId__ = st.id;
+  document.getElementById('es_id').value = st.id;
+  document.getElementById('es_name').value = st.name ?? '';
+  document.getElementById('es_desc').value = st.description ?? '';
+  document.getElementById('es_exchange').value = st.exchange ?? '';
+  document.getElementById('es_pair').value = st.pair ?? '';
+  document.getElementById('es_active').checked = !!st.active;
+
+  window.__gatherSetEditPayload__ = function() {
+    return {
+      name: document.getElementById('es_name').value.trim(),
+      description: document.getElementById('es_desc').value.trim() || null,
+      exchange: document.getElementById('es_exchange').value.trim().toLowerCase() || null,
+      pair: document.getElementById('es_pair').value.trim().toUpperCase() || null,
+      active: document.getElementById('es_active').checked,
+    };
+  };
+
+  const modal = new bootstrap.Modal(document.getElementById('editSetModal'));
+  modal.show();
 }
 
 function sVal(id){ return document.getElementById(id)?.value?.trim() ?? ""; }
@@ -21,50 +36,6 @@ function setPayloadFromForm() {
     pair: sVal("set_pair").toUpperCase() || null,
     active: sBool("set_active"),
   };
-}
-
-async function loadSets() {
-  const tbody = document.getElementById('setsTable');
-  if (tbody) tbody.innerHTML = `<tr><td colspan="6">Loading…</td></tr>`;
-
-  // беремо ТІЛЬКИ exchange/pair (user_id все одно приходить з токена на бекенді)
-  const { exchange, pair, user_id } = getActiveFilters();
-  const url = `/api/strategy_sets${buildQuery({ exchange, pair, user_id })}`;
-
-  const res = await apiFetch(url);
-  if (!res.ok) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="6">Error ${res.status}</td></tr>`;
-    return;
-  }
-  const sets = await res.json();
-
-  // 1) таблиця
-  if (tbody) {
-    tbody.innerHTML = '';
-    sets.forEach(s => tbody.appendChild(renderSetRow(s)));
-  }
-
-  // 2) селект зверху "Rules in Set"
-  const setSelect = document.getElementById('setSelect');
-  if (setSelect) {
-    const keep = setSelect.value;
-    setSelect.innerHTML = '';
-    sets.forEach(s => {
-      const o = document.createElement('option');
-      o.value = s.id;
-      // покажемо назву + (ex/pair), якщо є
-      const extra = [s.exchange, s.pair].filter(Boolean).join(' ');
-      o.textContent = extra ? `${s.name} (${extra})` : s.name;
-      setSelect.appendChild(o);
-    });
-    if (keep && [...setSelect.options].some(o => o.value === keep)) {
-      setSelect.value = keep;
-    }
-    // перевантажити правила для вибраного сету
-    if (typeof loadSetRules === 'function' && setSelect.value) {
-      loadSetRules(setSelect.value);
-    }
-  }
 }
 
 function renderSetRow(st) {
@@ -128,27 +99,56 @@ async function addSet() {
   await loadSets();
 }
 
-function openEditSet(st) {
-  window.__editSetId__ = st.id;
-  document.getElementById('es_id').value = st.id;
-  document.getElementById('es_name').value = st.name ?? '';
-  document.getElementById('es_desc').value = st.description ?? '';
-  document.getElementById('es_exchange').value = st.exchange ?? '';
-  document.getElementById('es_pair').value = st.pair ?? '';
-  document.getElementById('es_active').checked = !!st.active;
+async function loadSets() {
+  const tbody = document.getElementById('setsTable');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="6">Loading…</td></tr>`;
 
-  window.__gatherSetEditPayload__ = function() {
-    return {
-      name: document.getElementById('es_name').value.trim(),
-      description: document.getElementById('es_desc').value.trim() || null,
-      exchange: document.getElementById('es_exchange').value.trim().toLowerCase() || null,
-      pair: document.getElementById('es_pair').value.trim().toUpperCase() || null,
-      active: document.getElementById('es_active').checked,
-    };
-  };
+  // беремо ТІЛЬКИ exchange/pair (user_id все одно приходить з токена на бекенді)
+  const { exchange, pair, user_id } = getActiveFilters();
+  const url = `/api/strategy_sets${buildQuery({ exchange, pair, user_id })}`;
 
-  const modal = new bootstrap.Modal(document.getElementById('editSetModal'));
-  modal.show();
+  const res = await apiFetch(url);
+  if (!res.ok) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6">Error ${res.status}</td></tr>`;
+    return;
+  }
+  const sets = await res.json();
+
+  // 1) таблиця
+  if (tbody) {
+    tbody.innerHTML = '';
+    sets.forEach(s => tbody.appendChild(renderSetRow(s)));
+  }
+
+  // 2) селект зверху "Rules in Set"
+  const setSelect = document.getElementById('setSelect');
+  if (setSelect) {
+    const keep = setSelect.value;
+    setSelect.innerHTML = '';
+    sets.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id;
+      // покажемо назву + (ex/pair), якщо є
+      const extra = [s.exchange, s.pair].filter(Boolean).join(' ');
+      o.textContent = extra ? `${s.name} (${extra})` : s.name;
+      setSelect.appendChild(o);
+    });
+    if (keep && [...setSelect.options].some(o => o.value === keep)) {
+      setSelect.value = keep;
+    }
+    // перевантажити правила для вибраного сету
+    if (typeof loadSetRules === 'function' && setSelect.value) {
+      loadSetRules(setSelect.value);
+    }
+  }
+}
+
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('access_token');
+  const headers = options.headers || {};
+  headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
 }
 
 async function updateSet(id, body) {

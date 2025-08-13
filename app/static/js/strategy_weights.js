@@ -1,15 +1,46 @@
 // ===== strategy_weights.js =====
 console.log('[strategy_weights.js] loaded');
 
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('access_token');
-  const headers = options.headers || {};
-  headers['Content-Type'] = 'application/json';
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
+function renderWeightRow(w) {
+  const tr = document.createElement('tr');
+  const cells = [
+    w.exchange ?? '',
+    w.pair ?? '',
+    w.rsi_weight ?? '',
+    w.forecast_weight ?? '',
+    w.acceleration_weight ?? '',
+    w.trade_logic ?? '',
+    w.updated_at ? new Date(w.updated_at).toLocaleString() : ''
+  ].map(t => { const td = document.createElement('td'); td.textContent = t; return td; });
+
+  const actionsTd = document.createElement('td');
+  actionsTd.innerHTML = `
+    <div class="btn-group btn-group-sm" role="group">
+      <button class="btn btn-primary">Edit</button>
+      <button class="btn btn-danger">Delete</button>
+    </div>
+  `;
+  const [editBtn, delBtn] = actionsTd.querySelectorAll('button');
+
+  editBtn.addEventListener('click', () => {
+    // Заповнюємо форму зверху для редагування
+    document.getElementById('w_exchange').value = (w.exchange ?? '').toLowerCase();
+    document.getElementById('w_pair').value = (w.pair ?? '').toUpperCase();
+    document.getElementById('w_rsi').value = w.rsi_weight ?? 1.0;
+    document.getElementById('w_forecast').value = w.forecast_weight ?? 1.0;
+    document.getElementById('w_accel').value = w.acceleration_weight ?? 1.0;
+    document.getElementById('w_logic').value = w.trade_logic ?? 'COMBINER';
+  });
+
+  delBtn.addEventListener('click', () => deleteWeights(w.exchange, w.pair));
+
+  cells.forEach(td => tr.appendChild(td));
+  tr.appendChild(actionsTd);
+  return tr;
 }
 
 function wVal(id){ return document.getElementById(id)?.value?.trim() ?? ""; }
+
 function num(s){
   if (s === null || s === undefined) return null;
   const n = String(s).replace(',', '.').trim();
@@ -48,42 +79,12 @@ async function loadWeights() {
   }
 }
 
-function renderWeightRow(w) {
-  const tr = document.createElement('tr');
-  const cells = [
-    w.exchange ?? '',
-    w.pair ?? '',
-    w.rsi_weight ?? '',
-    w.forecast_weight ?? '',
-    w.acceleration_weight ?? '',
-    w.trade_logic ?? '',
-    w.updated_at ? new Date(w.updated_at).toLocaleString() : ''
-  ].map(t => { const td = document.createElement('td'); td.textContent = t; return td; });
-
-  const actionsTd = document.createElement('td');
-  actionsTd.innerHTML = `
-    <div class="btn-group btn-group-sm" role="group">
-      <button class="btn btn-primary">Edit</button>
-      <button class="btn btn-danger">Delete</button>
-    </div>
-  `;
-  const [editBtn, delBtn] = actionsTd.querySelectorAll('button');
-
-  editBtn.addEventListener('click', () => {
-    // Заповнюємо форму зверху для редагування
-    document.getElementById('w_exchange').value = (w.exchange ?? '').toLowerCase();
-    document.getElementById('w_pair').value = (w.pair ?? '').toUpperCase();
-    document.getElementById('w_rsi').value = w.rsi_weight ?? 1.0;
-    document.getElementById('w_forecast').value = w.forecast_weight ?? 1.0;
-    document.getElementById('w_accel').value = w.acceleration_weight ?? 1.0;
-    document.getElementById('w_logic').value = w.trade_logic ?? 'COMBINER';
-  });
-
-  delBtn.addEventListener('click', () => deleteWeights(w.exchange, w.pair));
-
-  cells.forEach(td => tr.appendChild(td));
-  tr.appendChild(actionsTd);
-  return tr;
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('access_token');
+  const headers = options.headers || {};
+  headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
 }
 
 async function upsertWeights() {
