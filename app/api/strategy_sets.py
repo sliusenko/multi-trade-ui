@@ -25,18 +25,47 @@ class StrategySetUpdate(StrategySetBase):
 class StrategySetResponse(StrategySetBase):
   id: int
 
-@router.get("/", response_model=List[StrategySetResponse])
-@router.get("", response_model=List[StrategySetResponse])
+def _normalize_exchange(ex: str | None) -> str | None:
+    return ex.lower() if ex else None
+
+def _normalize_pair(p: str | None) -> str | None:
+    return p.upper() if p else None
+
+def _resolve_user_scope(
+    requested_user_id: int | None,
+    current_user_id: int,
+    is_admin: bool,
+) -> int:
+    if requested_user_id is None or requested_user_id == current_user_id:
+        return current_user_id
+    if not is_admin:
+        # не дозволяємо дивитись чужі дані
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return requested_user_id
+
+@router.get("/", response_model=list[StrategySetResponse])
+@router.get("",  response_model=list[StrategySetResponse])
 async def list_sets(
     exchange: str | None = Query(None),
     pair: str | None = Query(None),
+    user_id: int | None = Query(None),                 # <- додаємо
     current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),              # <- твоя перевірка адміна
 ):
-    stmt = select(strategy_sets).where(strategy_sets.c.user_id == current_user_id)
-    if exchange:
-        stmt = stmt.where(strategy_sets.c.exchange == exchange.lower())
-    if pair:
-        stmt = stmt.where(strategy_sets.c.pair == pair.upper())
+    ex = _normalize_exchange(exchange)
+    pr = _normalize_pair(pair)
+    uid = _resolve_user_scope(user_id, current_user_id, admin)
+
+    stmt = (
+        select(strategy_sets)
+        .where(strategy_sets.c.user_id == uid)
+        .order_by(strategy_sets.c.id)
+    )
+    if ex:
+        stmt = stmt.where(strategy_sets.c.exchange == ex)
+    if pr:
+        stmt = stmt.where(strategy_sets.c.pair == pr)
+
     rows = await database.fetch_all(stmt)
     return [dict(r) for r in rows]
 
