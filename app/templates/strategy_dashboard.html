@@ -40,8 +40,9 @@
     <div class="ms-auto d-flex" style="gap:.5rem">
       <select id="ruleSelect" class="form-select" style="max-width:260px"></select>
       <input id="rulePriority" class="form-control" type="number" min="0" value="100" style="max-width:110px">
-      <input type="number" value="15" oninput="onPriorityInput(SET_ID, RULE_ID, this)">
-      <input type="checkbox" onchange="toggleSetRuleEnabled(SET_ID, RULE_ID, this.checked)">
+<!-- тимчасово прибрати, вони ламають виклики -->
+<!-- <input ... oninput="onPriorityInput(SET_ID, RULE_ID, this)"> -->
+<!-- <input ... onchange="toggleSetRuleEnabled(SET_ID, RULE_ID, this.checked)"> -->
       <button class="btn btn-primary" onclick="attachRule()">Attach</button>
     </div>
   </div>
