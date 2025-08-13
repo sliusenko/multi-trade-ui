@@ -22,6 +22,12 @@ class StrategySetResponse(StrategySetBase):
     id: int
     class Config: orm_mode = True
 
+class StrategySetBase(BaseModel):
+  name: Optional[str] = None
+  description: Optional[str] = None
+  exchange: Optional[str] = None
+  pair: Optional[str] = None
+  active: Optional[bool] = None
 
 # app/schemas/strategy_sets_rules.py
 class SetRuleCreate(BaseModel):

@@ -5,26 +5,12 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from sqlalchemy import select, delete, update, func, text, distinct, and_
 from sqlalchemy.dialects.postgresql import insert
+from app.schemas.strategy_weights import WeightsBase, WeightsUpsert, WeightsResponse
 from app.services.db import database
 from app.dependencies import get_current_user
 from app.models import strategy_weights  # SQLAlchemy Table
 
 router = APIRouter(prefix="/api/strategy_weights", tags=["Strategy Weights"])
-
-class WeightsBase(BaseModel):
-    exchange: Optional[str] = None
-    pair: Optional[str] = None
-    rsi_weight: Optional[float] = Field(default=1.0)
-    forecast_weight: Optional[float] = Field(default=1.0)
-    acceleration_weight: Optional[float] = Field(default=1.0)
-    trade_logic: Optional[str] = Field(default="COMBINER")
-
-class WeightsUpsert(WeightsBase):
-    exchange: str
-    pair: str
-
-class WeightsResponse(WeightsBase):
-    updated_at: datetime | None = None
 
 @router.get("", response_model=List[WeightsResponse])
 async def list_weights(

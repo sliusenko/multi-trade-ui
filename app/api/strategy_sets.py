@@ -3,28 +3,11 @@ from typing import List, Optional
 from sqlalchemy import select, update, delete, text, distinct, and_
 from app.services.db import database
 from app.dependencies import get_current_user, is_admin_user, _resolve_user_scope
-
+from app.schemas.strategy_sets import StrategySetResponse, StrategySetUpdate, StrategySetCreate
 from app.models import strategy_sets  # SQLAlchemy Table
-
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/strategy_sets", tags=["Strategy Sets"])
-
-class StrategySetBase(BaseModel):
-  name: Optional[str] = None
-  description: Optional[str] = None
-  exchange: Optional[str] = None
-  pair: Optional[str] = None
-  active: Optional[bool] = None
-
-class StrategySetCreate(StrategySetBase):
-  name: str
-
-class StrategySetUpdate(StrategySetBase):
-  pass
-
-class StrategySetResponse(StrategySetBase):
-  id: int
 
 # ---- helpers ----
 _ALL_TOKENS = {"", "all", "any", "all pairs", "all users", "all exchanges", "null", "-"}
