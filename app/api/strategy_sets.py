@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from sqlalchemy import select, update, delete, text, distinct, and_
 from app.services.db import database
-from app.dependencies import get_current_user, is_admin_user
+from app.dependencies import get_current_user, is_admin_user, resolve_user_scope
+
 from app.models import strategy_sets  # SQLAlchemy Table
 
 from pydantic import BaseModel
@@ -40,18 +41,6 @@ def _normalize_pair(p: str | None) -> str | None:
     p_norm = p.strip()
     # приймаємо як плейсхолдери: "", "all", "All Pairs", "-", "null"
     return None if p_norm.lower() in _ALL_TOKENS else p_norm.upper()
-
-def _resolve_user_scope(
-    requested_user_id: int | None,
-    current_user_id: int,
-    is_admin: bool,
-) -> int:
-    # якщо фронт шле user_id=0 або "all" — трактуємо як None
-    if requested_user_id in (None, 0):
-        return current_user_id
-    if requested_user_id == current_user_id or is_admin:
-        return requested_user_id
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 @router.get("/", response_model=list[StrategySetResponse])
 @router.get("",  response_model=list[StrategySetResponse])
