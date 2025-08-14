@@ -80,10 +80,12 @@ async def list_set_rules(set_id: int, user_id: int | None = Query(None), exchang
 
 @router.post("/{set_id}/rules", response_model=SetRuleItem, status_code=status.HTTP_201_CREATED)
 async def add_set_rule(set_id: int, body: SetRuleCreate, user_id: int | None = Query(None), exchange: str | None = Query(None),
-    current_user_id: int = Depends(get_current_user), admin: bool = Depends(is_admin_user),):
+    pair: str | None = Query(None), current_user_id: int = Depends(get_current_user), admin: bool = Depends(is_admin_user),):
     # валідність rule і володіння
     uid = _resolve_user_scope(user_id, current_user_id, admin)
     ex = _normalize_exchange(exchange)
+    pr = _normalize_pair(pair)
+
     rule_ok = await database.fetch_one(
         select(strategy_rules.c.id).where(
             strategy_rules.c.id == body.rule_id, strategy_rules.c.user_id == uid
