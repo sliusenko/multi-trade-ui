@@ -79,10 +79,11 @@ async def list_set_rules(set_id: int, user_id: int | None = Query(None), exchang
     return [SetRuleItem(**dict(r)) for r in rows]
 
 @router.post("/{set_id}/rules", response_model=SetRuleItem, status_code=status.HTTP_201_CREATED)
-async def add_set_rule(set_id: int, body: SetRuleCreate, user_id: int | None = Query(None), exchange: str | None = Query(None), pair: str | None = Query(None),
+async def add_set_rule(set_id: int, body: SetRuleCreate, user_id: int | None = Query(None), exchange: str | None = Query(None),
     current_user_id: int = Depends(get_current_user), admin: bool = Depends(is_admin_user),):
     # валідність rule і володіння
     uid = _resolve_user_scope(user_id, current_user_id, admin)
+    ex = _normalize_exchange(exchange)
     rule_ok = await database.fetch_one(
         select(strategy_rules.c.id).where(
             strategy_rules.c.id == body.rule_id, strategy_rules.c.user_id == uid
@@ -121,7 +122,7 @@ async def add_set_rule(set_id: int, body: SetRuleCreate, user_id: int | None = Q
     )
     await database.execute(ins)
     # повернемо повний рядок через list_set_rules
-    items = await list_set_rules(set_id, uid)  # reuse
+    items = await list_set_rules(set_id, uid, ex)  # reuse
     return next(i for i in items if i.rule_id == body.rule_id)
 
 @router.patch("/{set_id}/rules/{rule_id}", response_model=SetRuleItem)
