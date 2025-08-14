@@ -130,7 +130,17 @@ async def reorder_rules(set_id: int, payload: ReorderPayload, uid: int = Depends
     return {"status": "ok"}
 
 @router.delete("/{set_id}/rules/{rule_id}", status_code=204)
-async def detach_rule(set_id: int, rule_id: int, uid: int = Depends(get_current_user)):
+async def detach_rule(
+    set_id: int,
+    rule_id: int,
+    user_id: int | None = Query(None),
+    exchange: str | None = Query(None),   # необов'язково
+    pair: str | None = Query(None),       # необов'язково
+    current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),
+):
+    uid = _resolve_user_scope(user_id, current_user_id, admin)
+
     delq = delete(strategy_sets_rules).where(
         strategy_sets_rules.c.user_id == uid,
         strategy_sets_rules.c.set_id == set_id,
