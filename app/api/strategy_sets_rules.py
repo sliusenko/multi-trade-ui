@@ -78,54 +78,63 @@ async def list_set_rules(set_id: int, user_id: int | None = Query(None), exchang
     rows = await database.fetch_all(q)
     return [SetRuleItem(**dict(r)) for r in rows]
 
-@router.post("/{set_id}/rules", response_model=SetRuleItem, status_code=status.HTTP_201_CREATED)
-async def add_set_rule(set_id: int, body: SetRuleCreate, user_id: int | None = Query(None), exchange: str | None = Query(None),
-    pair: str | None = Query(None), current_user_id: int = Depends(get_current_user), admin: bool = Depends(is_admin_user),):
-    # валідність rule і володіння
-    uid = _resolve_user_scope(user_id, current_user_id, admin)
+# ---- core без Query(...) ----
+async def list_set_rules_core(set_id: int, uid: int, exchange: str | None, pair: str | None):
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)
 
-    rule_ok = await database.fetch_one(
-        select(strategy_rules.c.id).where(
-            strategy_rules.c.id == body.rule_id, strategy_rules.c.user_id == uid
-        )
+    # перевірка існування set для uid (+ опц. фільтри)
+    exists_q = select(strategy_sets.c.id).where(
+        strategy_sets.c.id == set_id,
+        strategy_sets.c.user_id == uid,
     )
-    set_ok = await database.fetch_one(
-        select(strategy_sets.c.id).where(
-            strategy_sets.c.id == set_id, strategy_sets.c.user_id == uid
-        )
-    )
-    if not rule_ok or not set_ok:
-        raise HTTPException(404, "Rule or Set not found")
+    if ex is not None:
+        exists_q = exists_q.where(strategy_sets.c.exchange == ex)
+    if pr is not None:
+        exists_q = exists_q.where(strategy_sets.c.pair == pr)
+    if not await database.fetch_one(exists_q):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Set not found")
 
-    # унікальність у межах (user,set,rule)
-    exists = await database.fetch_one(
-        select(strategy_sets_rules.c.rule_id).where(
-            strategy_sets_rules.c.user_id == uid,
-            strategy_sets_rules.c.set_id == set_id,
-            strategy_sets_rules.c.rule_id == body.rule_id,
+    q = (
+        select(
+            strategy_sets_rules.c.rule_id,
+            strategy_rules.c.action,
+            strategy_rules.c.condition_type,
+            strategy_rules.c.param_1,
+            strategy_rules.c.param_2,
+            strategy_sets_rules.c.enabled,
+            strategy_sets_rules.c.priority,
         )
+        .select_from(
+            strategy_sets_rules
+            .join(strategy_sets, strategy_sets.c.id == strategy_sets_rules.c.set_id)
+            .join(strategy_rules, strategy_rules.c.id == strategy_sets_rules.c.rule_id)
+        )
+        .where(
+            strategy_sets.c.id == set_id,
+            strategy_sets.c.user_id == uid,
+        )
+        .order_by(strategy_sets_rules.c.priority, strategy_rules.c.id)
     )
-    if exists:
-        raise HTTPException(409, "Rule already attached to this set")
+    if ex is not None:
+        q = q.where(strategy_sets.c.exchange == ex)
+    if pr is not None:
+        q = q.where(strategy_sets.c.pair == pr)
 
-    ins = (
-        insert(strategy_sets_rules)
-        .values(
-            user_id=uid,
-            set_id=set_id,
-            rule_id=body.rule_id,
-            enabled=body.enabled,
-            priority=body.priority,
-#            note=body.note,
-        )
-        .returning(strategy_sets_rules.c.rule_id)
-    )
-    await database.execute(ins)
-    # повернемо повний рядок через list_set_rules
-    items = await list_set_rules(set_id, uid, ex)  # reuse
-    return next(i for i in items if i.rule_id == body.rule_id)
+    rows = await database.fetch_all(q)
+    return [SetRuleItem(**dict(r)) for r in rows]
+
+@router.get("/{set_id}/rules", response_model=List[SetRuleItem])
+async def list_set_rules(
+    set_id: int,
+    user_id: int | None = Query(None),
+    exchange: str | None = Query(None),
+    pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),
+):
+    uid = _resolve_user_scope(user_id, current_user_id, admin)
+    return await list_set_rules_core(set_id, uid, exchange, pair)
 
 @router.patch("/{set_id}/rules/{rule_id}", response_model=SetRuleItem)
 async def update_set_rule(set_id: int, rule_id: int, body: SetRuleUpdate, uid: int = Depends(get_current_user)):
@@ -141,7 +150,7 @@ async def update_set_rule(set_id: int, rule_id: int, body: SetRuleUpdate, uid: i
     res = await database.execute(upd)
     if res is None:
         raise HTTPException(404, "Link not found")
-    items = await list_set_rules(set_id, uid)
+    items = await list_set_rules_core(set_id, uid, None, None)  # або передай активні фільтри, якщо вони у запиті
     return next(i for i in items if i.rule_id == rule_id)
 
 @router.post("/{set_id}/rules/reorder")
@@ -169,3 +178,53 @@ async def detach_rule(set_id: int, rule_id: int, uid: int = Depends(get_current_
         strategy_sets_rules.c.rule_id == rule_id,
     )
     await database.execute(delq)
+
+@router.post("/{set_id}/rules", response_model=SetRuleItem, status_code=status.HTTP_201_CREATED)
+async def add_set_rule(
+    set_id: int,
+    body: SetRuleCreate,
+    user_id: int | None = Query(None),
+    exchange: str | None = Query(None),
+    pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),
+):
+    uid = _resolve_user_scope(user_id, current_user_id, admin)
+
+    rule_ok = await database.fetch_one(
+        select(strategy_rules.c.id).where(
+            strategy_rules.c.id == body.rule_id,
+            strategy_rules.c.user_id == uid,
+        )
+    )
+    set_ok = await database.fetch_one(
+        select(strategy_sets.c.id).where(
+            strategy_sets.c.id == set_id,
+            strategy_sets.c.user_id == uid,
+        )
+    )
+    if not rule_ok or not set_ok:
+        raise HTTPException(404, "Rule or Set not found")
+
+    exists = await database.fetch_one(
+        select(strategy_sets_rules.c.rule_id).where(
+            strategy_sets_rules.c.user_id == uid,
+            strategy_sets_rules.c.set_id == set_id,
+            strategy_sets_rules.c.rule_id == body.rule_id,
+        )
+    )
+    if exists:
+        raise HTTPException(409, "Rule already attached to this set")
+
+    await database.execute(
+        insert(strategy_sets_rules).values(
+            user_id=uid,
+            set_id=set_id,
+            rule_id=body.rule_id,
+            enabled=body.enabled,
+            priority=body.priority,
+        )
+    )
+
+    items = await list_set_rules_core(set_id, uid, exchange, pair)   # ✅
+    return next(i for i in items if i.rule_id == body.rule_id)
