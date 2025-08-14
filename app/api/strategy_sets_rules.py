@@ -79,7 +79,8 @@ async def list_set_rules(set_id: int, user_id: int | None = Query(None), exchang
     return [SetRuleItem(**dict(r)) for r in rows]
 
 @router.post("/{set_id}/rules", response_model=SetRuleItem, status_code=status.HTTP_201_CREATED)
-async def add_set_rule(set_id: int, body: SetRuleCreate,):
+async def add_set_rule(set_id: int, body: SetRuleCreate, user_id: int | None = Query(None), exchange: str | None = Query(None), pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user), admin: bool = Depends(is_admin_user),):
     # валідність rule і володіння
     uid = _resolve_user_scope(user_id, current_user_id, admin)
     rule_ok = await database.fetch_one(

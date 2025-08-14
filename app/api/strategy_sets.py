@@ -102,12 +102,12 @@ async def delete_set(
     if res == 0:
         raise HTTPException(status_code=404, detail="Set not found or not allowed")
 
-def filter_sets_base(set_id: int | None, uid: int, ex: str | None, pr: str | None):
-    stmt = select(strategy_sets).where(strategy_sets.c.user_id == uid)
-    if set_id is not None:
-        stmt = stmt.where(strategy_sets.c.id == set_id)
-    if ex:
-        stmt = stmt.where(strategy_sets.c.exchange == ex)
-    if pr:
-        stmt = stmt.where(strategy_sets.c.pair == pr)
-    return stmt
+# def filter_sets_base(set_id: int | None, uid: int, ex: str | None, pr: str | None):
+#     stmt = select(strategy_sets).where(strategy_sets.c.user_id == uid)
+#     if set_id is not None:
+#         stmt = stmt.where(strategy_sets.c.id == set_id)
+#     if ex:
+#         stmt = stmt.where(strategy_sets.c.exchange == ex)
+#     if pr:
+#         stmt = stmt.where(strategy_sets.c.pair == pr)
+#     return stmt
