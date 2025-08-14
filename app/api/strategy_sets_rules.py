@@ -81,7 +81,19 @@ async def list_set_rules(
     return await list_set_rules_core(set_id, uid, exchange, pair)
 
 @router.patch("/{set_id}/rules/{rule_id}", response_model=SetRuleItem)
-async def update_set_rule(set_id: int, rule_id: int, body: SetRuleUpdate, uid: int = Depends(get_current_user)):
+async def update_set_rule(
+    set_id: int,
+    rule_id: int,
+    body: SetRuleUpdate,
+    user_id: int | None = Query(None),
+    exchange: str | None = Query(None),
+    pair: str | None = Query(None),
+    current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),
+):
+    uid = _resolve_user_scope(user_id, current_user_id, admin)
+
+    # сформувати апдейт і повернути щось, щоб зрозуміти, чи був апдейт
     upd = (
         update(strategy_sets_rules)
         .where(
@@ -90,11 +102,14 @@ async def update_set_rule(set_id: int, rule_id: int, body: SetRuleUpdate, uid: i
             strategy_sets_rules.c.rule_id == rule_id,
         )
         .values({k: v for k, v in body.dict(exclude_unset=True).items()})
+        .returning(strategy_sets_rules.c.rule_id)
     )
-    res = await database.execute(upd)
-    if res is None:
+
+    row = await database.fetch_one(upd)  # <= а не execute()
+    if row is None:
         raise HTTPException(404, "Link not found")
-    items = await list_set_rules_core(set_id, uid, None, None)  # або передай активні фільтри, якщо вони у запиті
+
+    items = await list_set_rules_core(set_id, uid, exchange, pair)
     return next(i for i in items if i.rule_id == rule_id)
 
 @router.post("/{set_id}/rules/reorder")
