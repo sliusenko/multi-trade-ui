@@ -58,7 +58,7 @@ async def list_rules(
     elif "id" in strategy_rules.c:
         stmt = stmt.order_by(strategy_rules.c.id)
 
-    rows = await database.fetch_all(stmt)   # ← ти це пропустив
+    rows = await database.fetch_all(stmt)
     return [dict(r) for r in rows]
 
 @router.get("", response_model=List[StrategyRuleResponse])
