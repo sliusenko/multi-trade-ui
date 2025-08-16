@@ -367,7 +367,14 @@
     
       window.addEventListener('DOMContentLoaded', async () => {
         console.log('[init] Strategy Dashboard');
-    
+
+        document.getElementById('er_saveBtn')?.addEventListener('click', async () => {
+            const id = window.__editRuleId__;
+            const body = window.__gatherEditPayload__?.();
+            if (!id || !body) return;
+            await updateRule(id, body);
+        });
+
         // кнопки модалок/створення — залишаємо як у твоїх файлах JS
         const addBtn   = document.getElementById('addRuleBtn');
         if (addBtn) addBtn.addEventListener('click', e => { e.preventDefault(); addRule?.(); });

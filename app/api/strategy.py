@@ -62,7 +62,6 @@ async def list_rules(
     return [dict(r) for r in rows]
 
 @router.get("", response_model=List[StrategyRuleResponse])
-@router.get("/", response_model=List[StrategyRuleResponse])
 async def get_rules(current_user_id: int = Depends(get_current_user)):
     q = select(strategy_rules).where(strategy_rules.c.user_id == current_user_id)
     rows = await database.fetch_all(q)
@@ -70,7 +69,6 @@ async def get_rules(current_user_id: int = Depends(get_current_user)):
 
 # ---- POST (create) ----
 @router.post("", response_model=StrategyRuleResponse, status_code=status.HTTP_201_CREATED)
-@router.post("/", response_model=StrategyRuleResponse, status_code=status.HTTP_201_CREATED)
 async def create_rule(
     rule: StrategyRuleCreate,
     user_id: int | None = Query(None),
