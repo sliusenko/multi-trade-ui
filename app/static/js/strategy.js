@@ -198,7 +198,7 @@ async function toggleEnabledSets_Rules(rule) {
 
   try {
     const res = await apiFetch(`/api/strategy_rules/${rule.id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify(body),
     });
 
