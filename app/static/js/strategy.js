@@ -167,15 +167,11 @@ function openEditRule(rule) {
 async function updateRule(id, body) {
   console.log('[updateRule] called', id, body);
 
-  const userId = document.getElementById("filter_user")?.value || "";
-  const query = userId ? `?user_id=${userId}` : "";
-
-  let res = await apiFetch(`/api/strategy_rules/${id}${query}`, {
-    method: 'PATCH',  // ← ОБОВʼЯЗКОВО PATCH, не PUT
+  const qs = getFiltersQS();  // ← ключовий момент
+  const res = await apiFetch(`/api/strategy_rules/${id}${qs}`, {
+    method: 'PATCH',
     body: JSON.stringify(body),
   });
-
-  console.log('[updateRule] PATCH status=', res.status, res.url);
 
   if (!res.ok) {
     const txt = await safeText(res);
@@ -184,7 +180,7 @@ async function updateRule(id, body) {
     return;
   }
 
-  await loadRules();
+  await loadRules();  // перезавантажує таблицю
 }
 
 // ====== Toggle ======
