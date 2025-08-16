@@ -91,7 +91,6 @@ async def create_rule(
     return StrategyRuleResponse(**dict(row))
 
 
-# ---- PUT/PATCH (update) ----
 @router.put("/{rule_id}", response_model=StrategyRuleResponse)
 @router.patch("/{rule_id}", response_model=StrategyRuleResponse)
 async def update_rule(
@@ -107,30 +106,26 @@ async def update_rule(
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)
 
-    # читаємо поточне правило
-    current = await database.fetch_one(
-        select(strategy_rules).where(strategy_rules.c.id == rule_id, strategy_rules.c.user_id == uid)
-    )
-    if not current:
-        raise HTTPException(status_code=404, detail="Rule not found")
+    values = {k: v for k, v in rule.dict(exclude_unset=True).items()}
 
-    values = rule.dict(exclude_unset=True)
-    values.pop("user_id", None)  # не дозволяємо змінювати власника
+    # побудова умови
+    conds = [strategy_rules.c.id == rule_id, strategy_rules.c.user_id == uid]
+    if ex: conds.append(strategy_rules.c.exchange == ex)
+    if pr: conds.append(strategy_rules.c.pair == pr)
 
-    if "exchange" not in values and ex:
-        values["exchange"] = ex
-    if "pair" not in values and pr:
-        values["pair"] = pr
-
-    if not values:
-        return StrategyRuleResponse(**dict(current))
-
-    await database.execute(
+    res = await database.execute(
         update(strategy_rules)
-        .where(strategy_rules.c.id == rule_id, strategy_rules.c.user_id == uid)
+        .where(and_(*conds))
         .values(**values)
     )
-    row = await database.fetch_one(select(strategy_rules).where(strategy_rules.c.id == rule_id))
+
+    row = await database.fetch_one(
+        select(strategy_rules).where(strategy_rules.c.id == rule_id, strategy_rules.c.user_id == uid)
+    )
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Rule not found")
+
     return StrategyRuleResponse(**dict(row))
 
 # ---- DELETE ----
