@@ -81,16 +81,52 @@ async def create_rule(rule: StrategyRuleCreate, current_user_id: int = Depends(g
 # ---- PUT/PATCH (update) ----
 @router.put("/{rule_id}", response_model=StrategyRuleResponse)
 @router.patch("/{rule_id}", response_model=StrategyRuleResponse)
-async def update_rule(rule_id: int, rule: StrategyRuleUpdate, current_user_id: int = Depends(get_current_user)):
-    values = {k: v for k, v in rule.dict(exclude_unset=True).items()}
-    res = await database.execute(
+async def update_rule(
+    rule_id: int,
+    rule: StrategyRuleUpdate,
+    user_id: int | None = Query(None),
+    current_user_id: int = Depends(get_current_user),
+    admin: bool = Depends(is_admin_user),
+):
+    # 1) Визначаємо, в чиєму scope працюємо
+    uid = _resolve_user_scope(user_id, current_user_id, admin)
+
+    # 2) Читаємо правило в межах цього користувача
+    current = await database.fetch_one(
+        select(strategy_rules).where(
+            strategy_rules.c.id == rule_id,
+            strategy_rules.c.user_id == uid,
+        )
+    )
+    if not current:
+        # не розкриваємо, чи існує ресурс взагалі
+        raise HTTPException(status_code=404, detail="Rule not found")
+
+    # 3) Формуємо оновлення (без можливості змінити власника)
+    values = rule.dict(exclude_unset=True)
+    values.pop("user_id", None)  # забороняємо переносити правило між користувачами
+
+    if not values:
+        # нічого оновлювати — повертаємо поточний стан
+        return StrategyRuleResponse(**dict(current))
+
+    # 4) Оновлюємо в межах scope (id + user_id)
+    await database.execute(
         update(strategy_rules)
-        .where(strategy_rules.c.id == rule_id, strategy_rules.c.user_id == current_user_id)
+        .where(
+            strategy_rules.c.id == rule_id,
+            strategy_rules.c.user_id == uid,
+        )
         .values(**values)
     )
-    row = await database.fetch_one(select(strategy_rules).where(strategy_rules.c.id == rule_id))
-    if not row:
-        raise HTTPException(status_code=404, detail="Rule not found")
+
+    # 5) Повертаємо свіже значення
+    row = await database.fetch_one(
+        select(strategy_rules).where(
+            strategy_rules.c.id == rule_id,
+            strategy_rules.c.user_id == uid,
+        )
+    )
     return StrategyRuleResponse(**dict(row))
 
 # ---- DELETE ----
