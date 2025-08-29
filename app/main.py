@@ -59,7 +59,7 @@ async def shutdown():
 @app.get("/")
 async def home():
     # Віддаємо login.html як стартову сторінку
-    return FileResponse("app/static/login.html")
+    return FileResponse("login.html")
 
 # === Дашборд стратегії ===
 @app.get("/strategy_dashboard")
