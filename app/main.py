@@ -13,6 +13,7 @@ from app.api.charts_routes import router as ui_router
 from app.api.strategy_sets import router as sets_router
 from app.api.strategy_sets_rules import router as strategy_sets_rules
 from app.api.strategy_weights import router as weights_router
+from app.api.analysis_data import router as analysis_router
 
 app = FastAPI()
 
@@ -28,6 +29,7 @@ app.include_router(sets_router)
 app.include_router(strategy_sets_rules)
 app.include_router(weights_router)
 app.include_router(ui_router)
+app.include_router(analysis_router)
 app.router.redirect_slashes = False
 
 # === Middleware для сесій ===
