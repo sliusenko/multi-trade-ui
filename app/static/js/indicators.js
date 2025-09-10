@@ -90,7 +90,6 @@ let chart;
 function buildChart(rows, selected) {
   const ctx = $("#chartCanvas").getContext("2d");
   const labels = rows.map(r => r.timestamp);
-  const labels = rows.map(r => new Date(r.timestamp));  // було: r.timestamp
 
   $("#activeIndicators").innerHTML = selected
     .map(s => `<span class="badge rounded-pill badge-ind">${s}</span>`).join("");
