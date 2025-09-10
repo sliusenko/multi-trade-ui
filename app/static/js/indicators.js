@@ -89,20 +89,20 @@ function download(filename, text) {
 let chart;
 function buildChart(rows, selected) {
   const ctx = $("#chartCanvas").getContext("2d");
-//  const labels = rows.map(r => r.timestamp);
-  const labels = rows.map(r => new Date(r.timestamp));  // було: r.timestamp
 
+  // бейджі активних серій
   $("#activeIndicators").innerHTML = selected
     .map(s => `<span class="badge rounded-pill badge-ind">${s}</span>`).join("");
 
   const palette = (i) => `hsl(${(i*41)%360} 70% 55%)`;
 
+  // будуємо серії у вигляді {x: Date, y: number}
   const datasets = selected.map((ind, i) => {
     const input = document.getElementById(`chk_${ind}`);
     const yAxisID = input?.dataset.axis === "y2" ? "y2" : "y";
     return {
       label: ind,
-      data: rows.map(r => r[ind]),
+      data: rows.map(r => ({ x: new Date(r.timestamp), y: r[ind] ?? null })), // ⬅️ ключова зміна
       borderColor: palette(i),
       backgroundColor: "transparent",
       spanGaps: true,
@@ -115,29 +115,24 @@ function buildChart(rows, selected) {
   chart?.destroy();
   chart = new Chart(ctx, {
     type: "line",
-    data: { labels, datasets },
+    data: { datasets },                 // ⬅️ labels не потрібні
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
       normalized: true,
-      parsing: false,
+      // parsing: false,                 // ⛔ при {x,y} не вимикаємо парсинг
       interaction: { mode: "index", intersect: false },
       scales: {
         x: {
           type: 'time',
-          time: { tooltipFormat: 'yyyy-LL-dd HH:mm' }, // parser більше не потрібен
+          time: { tooltipFormat: 'yyyy-LL-dd HH:mm' }, // ISO-8601 парситься адаптером
           ticks: { color: '#9aa3b2' },
           grid: { color: '#21263a' }
         },
         y:  { position: 'left',  ticks: { color: '#b7c0d0' }, grid: { color: '#21263a' } },
         y2: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#8ec1ff' } }
       },
-      // scales: {
-      //   x: {type: 'time', time: { parser: true, tooltipFormat: 'yyyy-LL-dd HH:mm' }, ticks: { color: '#9aa3b2' }, grid: { color: '#21263a' } },
-      //   y: { position: "left", ticks: { color: "#b7c0d0" }, grid: { color: "#21263a" } },
-      //   y2: { position: "right", grid: { drawOnChartArea: false }, ticks: { color: "#8ec1ff" } }
-      // },
       plugins: {
         legend: { labels: { color: "#d5d9e3" } },
         tooltip: {
