@@ -90,6 +90,7 @@ let chart;
 function buildChart(rows, selected) {
   const ctx = $("#chartCanvas").getContext("2d");
   const labels = rows.map(r => r.timestamp);
+  const labels = rows.map(r => new Date(r.timestamp));  // було: r.timestamp
 
   $("#activeIndicators").innerHTML = selected
     .map(s => `<span class="badge rounded-pill badge-ind">${s}</span>`).join("");
@@ -123,10 +124,20 @@ function buildChart(rows, selected) {
       parsing: false,
       interaction: { mode: "index", intersect: false },
       scales: {
-        x: {type: 'time', time: { parser: true, tooltipFormat: 'yyyy-LL-dd HH:mm' }, ticks: { color: '#9aa3b2' }, grid: { color: '#21263a' } },
-        y: { position: "left", ticks: { color: "#b7c0d0" }, grid: { color: "#21263a" } },
-        y2: { position: "right", grid: { drawOnChartArea: false }, ticks: { color: "#8ec1ff" } }
-      },
+        x: {
+          type: 'time',
+          time: { tooltipFormat: 'yyyy-LL-dd HH:mm' }, // parser більше не потрібен
+          ticks: { color: '#9aa3b2' },
+          grid: { color: '#21263a' }
+        },
+        y:  { position: 'left',  ticks: { color: '#b7c0d0' }, grid: { color: '#21263a' } },
+        y2: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#8ec1ff' } }
+      }
+      // scales: {
+      //   x: {type: 'time', time: { parser: true, tooltipFormat: 'yyyy-LL-dd HH:mm' }, ticks: { color: '#9aa3b2' }, grid: { color: '#21263a' } },
+      //   y: { position: "left", ticks: { color: "#b7c0d0" }, grid: { color: "#21263a" } },
+      //   y2: { position: "right", grid: { drawOnChartArea: false }, ticks: { color: "#8ec1ff" } }
+      // },
       plugins: {
         legend: { labels: { color: "#d5d9e3" } },
         tooltip: {
