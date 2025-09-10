@@ -9,6 +9,7 @@ from app.services.db import database
 from app.auth import router as auth_router
 from app.api import config_users
 from app.api.strategy import router as strategy_router
+from app.api.charts_routes import router as ui_router
 from app.api.strategy_sets import router as sets_router
 from app.api.strategy_sets_rules import router as strategy_sets_rules
 from app.api.strategy_weights import router as weights_router
@@ -26,6 +27,7 @@ app.include_router(config_users.router)
 app.include_router(sets_router)
 app.include_router(strategy_sets_rules)
 app.include_router(weights_router)
+app.include_router(ui_router)
 app.router.redirect_slashes = False
 
 # === Middleware для сесій ===
