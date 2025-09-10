@@ -123,7 +123,7 @@ function buildChart(rows, selected) {
       parsing: false,
       interaction: { mode: "index", intersect: false },
       scales: {
-        x: { type: "time", time: { tooltipFormat: "yyyy-LL-dd HH:mm" }, ticks: { color: "#9aa3b2" }, grid: { color: "#21263a" } },
+        x: {type: 'time', time: { parser: true, tooltipFormat: 'yyyy-LL-dd HH:mm' }, ticks: { color: '#9aa3b2' }, grid: { color: '#21263a' } },
         y: { position: "left", ticks: { color: "#b7c0d0" }, grid: { color: "#21263a" } },
         y2: { position: "right", grid: { drawOnChartArea: false }, ticks: { color: "#8ec1ff" } }
       },
