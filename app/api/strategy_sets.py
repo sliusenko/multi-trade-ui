@@ -22,7 +22,6 @@ def _normalize_pair(p: str | None) -> str | None:
     if p is None:
         return None
     p_norm = p.strip()
-    # приймаємо як плейсхолдери: "", "all", "All Pairs", "-", "null"
     return None if p_norm.lower() in _ALL_TOKENS else p_norm.upper()
 
 @router.get("/", response_model=list[StrategySetResponse])
@@ -80,14 +79,8 @@ async def update_set(set_id: int, payload: StrategySetUpdate, exchange: str | No
     return StrategySetResponse(**dict(row))
 
 @router.delete("/{set_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_set(
-    set_id: int,
-    exchange: str | None = Query(None),
-    pair: str | None = Query(None),
-    user_id: int | None = Query(None),
-    current_user_id: int = Depends(get_current_user),
-    admin: bool = Depends(is_admin_user),
-):
+async def delete_set(set_id: int, exchange: str | None = Query(None), pair: str | None = Query(None), user_id: int | None = Query(None),
+    current_user_id: int = Depends(get_current_user), admin: bool = Depends(is_admin_user), ):
     ex = _normalize_exchange(exchange)
     pr = _normalize_pair(pair)
     uid = _resolve_user_scope(user_id, current_user_id, admin)
@@ -102,12 +95,3 @@ async def delete_set(
     if res == 0:
         raise HTTPException(status_code=404, detail="Set not found or not allowed")
 
-# def filter_sets_base(set_id: int | None, uid: int, ex: str | None, pr: str | None):
-#     stmt = select(strategy_sets).where(strategy_sets.c.user_id == uid)
-#     if set_id is not None:
-#         stmt = stmt.where(strategy_sets.c.id == set_id)
-#     if ex:
-#         stmt = stmt.where(strategy_sets.c.exchange == ex)
-#     if pr:
-#         stmt = stmt.where(strategy_sets.c.pair == pr)
-#     return stmt
