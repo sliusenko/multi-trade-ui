@@ -25,6 +25,10 @@ class ConditionTypeEnum(str, Enum):
     OVERBOUGHT ="OVERBOUGHT"
     BB_SELL ="BB_SELL"
     DEAD_CROSS = "DEAD_CROSS"
+    ADX_RANGE = "ADX_RANGE"
+    BUY_DI_DOM = "BUY_DI_DOM"
+    SELL_DI_DOM = "SELL_DI_DOM"
+    BLOCK_LOW_ADX = "BLOCK_LOW_ADX"
 
 # ===== Schemas =====
 class StrategyRuleBase(BaseModel):
