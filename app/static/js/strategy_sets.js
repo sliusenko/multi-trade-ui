@@ -54,8 +54,8 @@ function renderSetRow(st) {
       name: st.name ?? '',
       description: st.description ?? null,
       exchange: (st.exchange || '').toLowerCase() || null,
-      pair: (st.pair || '').toUpperCase() || null,
       set_type: st.set_type ?? null,
+      pair: (st.pair || '').toUpperCase() || null,
       active: activeCheckbox.checked,
     });
   });
@@ -66,8 +66,8 @@ function renderSetRow(st) {
     st.name ?? '',
     activeCheckbox,
     st.exchange ?? '',
-    st.set_type ?? '',
     st.pair ?? ''
+    st.set_type ?? ''
   ].map(c => {
     const td = document.createElement('td');
     if (c instanceof HTMLElement) td.appendChild(c);
