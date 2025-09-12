@@ -22,6 +22,8 @@ class StrategySetCreate(StrategySetBase): pass
 class StrategySetUpdate(StrategySetBase): pass
 
 class StrategySetResponse(StrategySetBase):
+    id: int
+    class Config: orm_mode = True
 
 # app/schemas/strategy_sets_rules.py
 class SetRuleCreate(BaseModel):
