@@ -35,7 +35,7 @@ function setPayloadFromForm() {
     description: sVal("set_desc") || null,
     exchange: sVal("set_exchange").toLowerCase() || null,
     pair: sVal("set_pair").toUpperCase() || null,
-    Set type: sVal("set_type") || null,
+    set_type: sVal("set_type") || null,
     active: sBool("set_active"),
   };
 }
@@ -54,7 +54,7 @@ function renderSetRow(st) {
       description: st.description ?? null,
       exchange: (st.exchange || '').toLowerCase() || null,
       pair: (st.pair || '').toUpperCase() || null,
-      Set type: st.set_type ?? null,
+      set_type: st.set_type ?? null,
       active: activeCheckbox.checked,
     });
   });
@@ -192,7 +192,7 @@ async function toggleSetActive(st) {
     description: st.description ?? null,
     exchange: (st.exchange || '').toLowerCase() || null,
     pair: (st.pair || '').toUpperCase() || null,
-    Set type: st.set_type ?? null,
+    set_type: st.set_type ?? null,
     active: !st.active,
   };
   let res = await apiFetch(`/api/strategy_sets/${st.id}`, {
