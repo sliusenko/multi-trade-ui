@@ -6,6 +6,8 @@ from decimal import Decimal
 
 Action = Literal["BUY", "SELL"]
 Param  = Optional[Union[int, float, Decimal, str]]
+# 1) перелік допустимих типів сетів
+StrategySetType = Literal["default", "scalping", "aggressive", "combiner"]
 
 class StrategySetBase(BaseModel):
     name: str
@@ -13,6 +15,7 @@ class StrategySetBase(BaseModel):
     active: bool = False
     exchange: Optional[str] = None
     pair: Optional[str] = None
+    set_type: Optional[StrategySetType] = None
 
 class StrategySetCreate(StrategySetBase): pass
 
@@ -21,13 +24,6 @@ class StrategySetUpdate(StrategySetBase): pass
 class StrategySetResponse(StrategySetBase):
     id: int
     class Config: orm_mode = True
-
-class StrategySetBase(BaseModel):
-  name: Optional[str] = None
-  description: Optional[str] = None
-  exchange: Optional[str] = None
-  pair: Optional[str] = None
-  active: Optional[bool] = None
 
 # app/schemas/strategy_sets_rules.py
 class SetRuleCreate(BaseModel):
@@ -65,7 +61,6 @@ class StrategySetRuleResponse(StrategySetRuleBase): pass
 
 class ReorderPayload(BaseModel):
     rule_ids: List[int]
-
 
 # app/schemas/strategy_weights.py
 class StrategyWeightsBase(BaseModel):

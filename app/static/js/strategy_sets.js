@@ -8,6 +8,7 @@ function openEditSet(st) {
   document.getElementById('es_desc').value = st.description ?? '';
   document.getElementById('es_exchange').value = st.exchange ?? '';
   document.getElementById('es_pair').value = st.pair ?? '';
+  document.getElementById('es_set_type')?.value = st.set_type ?? '';
   document.getElementById('es_active').checked = !!st.active;
 
   window.__gatherSetEditPayload__ = function() {
@@ -16,6 +17,7 @@ function openEditSet(st) {
       description: document.getElementById('es_desc').value.trim() || null,
       exchange: document.getElementById('es_exchange').value.trim().toLowerCase() || null,
       pair: document.getElementById('es_pair').value.trim().toUpperCase() || null,
+      set_type: document.getElementById('es_set_type')?.value || null,
       active: document.getElementById('es_active').checked,
     };
   };
@@ -34,6 +36,7 @@ function setPayloadFromForm() {
     description: sVal("set_desc") || null,
     exchange: sVal("set_exchange").toLowerCase() || null,
     pair: sVal("set_pair").toUpperCase() || null,
+    set_type: sVal("set_type") || null,
     active: sBool("set_active"),
   };
 }
@@ -52,6 +55,7 @@ function renderSetRow(st) {
       description: st.description ?? null,
       exchange: (st.exchange || '').toLowerCase() || null,
       pair: (st.pair || '').toUpperCase() || null,
+      set_type: st.set_type ?? null,
       active: activeCheckbox.checked,
     });
   });
@@ -62,7 +66,8 @@ function renderSetRow(st) {
     st.name ?? '',
     activeCheckbox,
     st.exchange ?? '',
-    st.pair ?? ''
+    st.pair ?? '',
+    st.set_type ?? ''
   ].map(c => {
     const td = document.createElement('td');
     if (c instanceof HTMLElement) td.appendChild(c);
@@ -116,7 +121,7 @@ async function addSet() {
   }
 
   // очистити форму
-  ["set_name","set_desc","set_exchange","set_pair"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ["set_name","set_desc","set_exchange","set_pair","set_type"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const ac = document.getElementById('set_active'); if (ac) ac.checked = false;
 
   await loadSets();
@@ -124,7 +129,7 @@ async function addSet() {
 
 async function loadSets() {
   const tbody = document.getElementById('setsTable');
-  if (tbody) tbody.innerHTML = `<tr><td colspan="6">Loading…</td></tr>`;
+  if (tbody) tbody.innerHTML = `<tr><td colspan="8">Loading…</td></tr>`;
 
   // беремо ТІЛЬКИ exchange/pair (user_id все одно приходить з токена на бекенді)
   const { exchange, pair, user_id } = getActiveFilters();
@@ -132,7 +137,7 @@ async function loadSets() {
 
   const res = await apiFetch(url);
   if (!res.ok) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="6">Error ${res.status}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
     return;
   }
   const sets = await res.json();
@@ -188,6 +193,7 @@ async function toggleSetActive(st) {
     description: st.description ?? null,
     exchange: (st.exchange || '').toLowerCase() || null,
     pair: (st.pair || '').toUpperCase() || null,
+    set_type: st.set_type ?? null,
     active: !st.active,
   };
   let res = await apiFetch(`/api/strategy_sets/${st.id}`, {
