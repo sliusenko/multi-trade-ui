@@ -13,6 +13,7 @@ class StrategySetBase(BaseModel):
     active: bool = False
     exchange: Optional[str] = None
     pair: Optional[str] = None
+    set_type: Optional[str] = None
 
 class StrategySetCreate(StrategySetBase): pass
 
@@ -22,12 +23,13 @@ class StrategySetResponse(StrategySetBase):
     id: int
     class Config: orm_mode = True
 
-class StrategySetBase(BaseModel):
-  name: Optional[str] = None
-  description: Optional[str] = None
-  exchange: Optional[str] = None
-  pair: Optional[str] = None
-  active: Optional[bool] = None
+# class StrategySetBase(BaseModel):
+#   name: Optional[str] = None
+#   description: Optional[str] = None
+#   exchange: Optional[str] = None
+#   pair: Optional[str] = None
+#   active: Optional[bool] = None
+#   set_type: Optional[str] = None
 
 # app/schemas/strategy_sets_rules.py
 class SetRuleCreate(BaseModel):
