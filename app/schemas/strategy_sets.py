@@ -21,14 +21,7 @@ class StrategySetCreate(StrategySetBase): pass
 
 class StrategySetUpdate(StrategySetBase): pass
 
-class StrategySetResponse(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-    active: bool
-    exchange: Optional[str] = None
-    pair: Optional[str] = None
-    set_type: StrategySetType
+class StrategySetResponse(StrategySetBase):
 
 # app/schemas/strategy_sets_rules.py
 class SetRuleCreate(BaseModel):
