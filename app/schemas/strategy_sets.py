@@ -2,6 +2,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Literal, Union
 from fastapi import APIRouter, Depends, HTTPException, status
+from decimal import Decimal
 
 Action = Literal["BUY", "SELL"]
 Param  = Optional[Union[int, float, Decimal, str]]
