@@ -120,7 +120,7 @@ async function addSet() {
   }
 
   // очистити форму
-  ["set_name","set_desc","set_exchange","set_pair"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ["set_name","set_desc","set_exchange","set_pair","set_type"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const ac = document.getElementById('set_active'); if (ac) ac.checked = false;
 
   await loadSets();
