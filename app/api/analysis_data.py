@@ -13,6 +13,9 @@ class AnalysisRow(BaseModel):
     price: Optional[float] = None
     change: Optional[float] = None
     rsi: Optional[float] = None
+    adx: Optional[float] = None
+    plus_di: Optional[float] = None
+    minus_di: Optional[float] = None
     rsi_z: Optional[float] = None
     rsi_z_sell_threshold: Optional[float] = None
     rsi_z_buy_threshold: Optional[float] = None
@@ -111,7 +114,7 @@ async def list_analysis_data(
     where_sql = ("WHERE " + " AND ".join(where)) if where else ""
     sql = f"""
         SELECT
-          "timestamp", price, change, rsi, rsi_z, rsi_z_sell_threshold, rsi_z_buy_threshold,
+          "timestamp", price, change, rsi, adx, plus_di, minus_di, rsi_z, rsi_z_sell_threshold, rsi_z_buy_threshold,
           volume, ma_vol_5, ma_vol_10, avg_volume, macd, macd_signal, macd_prev,
           macd_signal_prev, sma_50, sma_200, volatility, delta_price, acceleration,
           open, close, high, low, price_z, volume_z, macd_diff_z, volatility_z,
