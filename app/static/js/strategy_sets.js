@@ -54,8 +54,8 @@ function renderSetRow(st) {
       name: st.name ?? '',
       description: st.description ?? null,
       exchange: (st.exchange || '').toLowerCase() || null,
-      set_type: st.set_type ?? null,
       pair: (st.pair || '').toUpperCase() || null,
+      set_type: st.set_type ?? null,
       active: activeCheckbox.checked,
     });
   });
