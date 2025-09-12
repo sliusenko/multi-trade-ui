@@ -66,7 +66,7 @@ function renderSetRow(st) {
     st.name ?? '',
     activeCheckbox,
     st.exchange ?? '',
-    st.pair ?? ''
+    st.pair ?? '',
     st.set_type ?? ''
   ].map(c => {
     const td = document.createElement('td');
