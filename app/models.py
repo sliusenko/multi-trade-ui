@@ -69,7 +69,7 @@ strategy_sets = Table(
     Column("created_at", DateTime, nullable=False, server_default=text("now()")),
     Column("exchange", Text),
     Column("pair", Text),
-    Column("set_type", Text),
+    Column("set_type", String(20), nullable=False),
 )
 
 # --- strategy_sets_rules ---
