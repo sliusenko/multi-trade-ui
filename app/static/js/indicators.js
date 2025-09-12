@@ -2,7 +2,7 @@
 const API_ENDPOINT = "/api/analysis_data";
 
 const INDICATORS = [
-  "price","change","rsi","rsi_z","rsi_z_sell_threshold","rsi_z_buy_threshold",
+  "price","change","rsi","rsi_z","adx","plus_di","minus_di","rsi_z_sell_threshold","rsi_z_buy_threshold",
   "volume","ma_vol_5","ma_vol_10","avg_volume","macd","macd_signal","macd_prev",
   "macd_signal_prev","sma_50","sma_200","volatility","delta_price","acceleration",
   "open","close","high","low","price_z","volume_z","macd_diff_z","volatility_z",
