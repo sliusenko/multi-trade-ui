@@ -137,7 +137,7 @@ async function loadSets() {
 
   const res = await apiFetch(url);
   if (!res.ok) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="6">Error ${res.status}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7">Error ${res.status}</td></tr>`;
     return;
   }
   const sets = await res.json();
