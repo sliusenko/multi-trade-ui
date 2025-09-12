@@ -8,7 +8,7 @@ function openEditSet(st) {
   document.getElementById('es_desc').value = st.description ?? '';
   document.getElementById('es_exchange').value = st.exchange ?? '';
   document.getElementById('es_pair').value = st.pair ?? '';
-  document.getElementById('set_type').value = st.set_type ?? '';
+  document.getElementById('es_set_type')?.value = st.set_type ?? '';
   document.getElementById('es_active').checked = !!st.active;
 
   window.__gatherSetEditPayload__ = function() {
@@ -17,6 +17,7 @@ function openEditSet(st) {
       description: document.getElementById('es_desc').value.trim() || null,
       exchange: document.getElementById('es_exchange').value.trim().toLowerCase() || null,
       pair: document.getElementById('es_pair').value.trim().toUpperCase() || null,
+      set_type: document.getElementById('es_set_type')?.value || null,
       active: document.getElementById('es_active').checked,
     };
   };
