@@ -7,36 +7,6 @@ from decimal import Decimal
 Action = Literal["BUY", "SELL"]
 Param  = Optional[Union[int, float, Decimal, str]]
 
-# 1) перелік допустимих типів сетів
-StrategySetType = Literal["default", "scalping", "aggressive", "combiner"]
-
-# -------- Strategy Sets --------
-class StrategySetCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    active: bool = False
-    exchange: Optional[str] = None
-    pair: Optional[str] = None
-    set_type: Optional[StrategySetType] = "default"   # якщо не надішлють — буде default
-
-class StrategySetUpdate(BaseModel):
-    # ВСІ поля опційні — щоб PATCH/PUT приймав часткові оновлення
-    name: Optional[str] = None
-    description: Optional[str] = None
-    active: Optional[bool] = None
-    exchange: Optional[str] = None
-    pair: Optional[str] = None
-    set_type: Optional[StrategySetType] = None        # можна міняти тип
-
-class StrategySetResponse(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-    active: bool
-    exchange: Optional[str] = None
-    pair: Optional[str] = None
-    set_type: StrategySetType                          # завжди повертаємо актуальний тип
-
 class StrategySetBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -44,6 +14,14 @@ class StrategySetBase(BaseModel):
     exchange: Optional[str] = None
     pair: Optional[str] = None
     set_type: Optional[str] = None
+
+class StrategySetCreate(StrategySetBase): pass
+
+class StrategySetUpdate(StrategySetBase): pass
+
+class StrategySetResponse(StrategySetBase):
+    id: int
+    class Config: orm_mode = True
 
 # app/schemas/strategy_sets_rules.py
 class SetRuleCreate(BaseModel):
