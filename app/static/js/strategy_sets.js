@@ -1,6 +1,37 @@
 // ===== strategy_sets.js =====
 console.log('[strategy_sets.js] loaded');
 
+// Завжди перетворити у JSON (якщо це Response) або пропустити (якщо вже JSON)
+async function asJson(x) {
+  if (x && typeof x === "object" && "ok" in x && typeof x.json === "function") {
+    if (!x.ok) {
+      const text = await x.text().catch(() => "");
+      throw new Error(`HTTP ${x.status} ${text}`);
+    }
+    return await x.json();
+  }
+  return x;
+}
+
+// Побудова ?query тільки коли треба; пропускає '', 'all', 'всі'
+function buildQuerySafe(params) {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params || {})) {
+    if (v == null) continue;
+    const s = String(v).trim();
+    if (!s || ["all","всі","усі"].includes(s.toLowerCase())) continue;
+    q.append(k, s);
+  }
+  const qs = q.toString();
+  return qs ? `?${qs}` : "";
+}
+
+// Нормалізація ENUM
+function normSetType(v) {
+  const t = (v ?? "").toLowerCase();
+  return ["default","scalping","aggressive","combiner"].includes(t) ? t : "default";
+}
+
 function openEditSet(st) {
   window.__editSetId__ = st.id;
   document.getElementById('es_id').value = st.id;
@@ -8,7 +39,8 @@ function openEditSet(st) {
   document.getElementById('es_desc').value = st.description ?? '';
   document.getElementById('es_exchange').value = st.exchange ?? '';
   document.getElementById('es_pair').value = st.pair ?? '';
-  document.getElementById('es_set_type')?.value = st.set_type ?? '';
+  const stSel = document.getElementById('es_set_type');
+  if (stSel) stSel.value = normSetType(st.set_type);
   document.getElementById('es_active').checked = !!st.active;
 
   window.__gatherSetEditPayload__ = function() {
@@ -36,7 +68,7 @@ function setPayloadFromForm() {
     description: sVal("set_desc") || null,
     exchange: sVal("set_exchange").toLowerCase() || null,
     pair: sVal("set_pair").toUpperCase() || null,
-    set_type: sVal("set_set_type") || null,
+    set_type: sVal("set_type") || null,
     active: sBool("set_active"),
   };
 }
@@ -121,7 +153,7 @@ async function addSet() {
   }
 
   // очистити форму
-  ["set_name","set_desc","set_exchange","set_pair","set_set_type"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ["set_name","set_desc","set_exchange","set_pair","set_type"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const ac = document.getElementById('set_active'); if (ac) ac.checked = false;
 
   await loadSets();
@@ -134,14 +166,30 @@ async function loadSets() {
 
   // беремо ТІЛЬКИ exchange/pair (user_id все одно приходить з токена на бекенді)
   const { exchange, pair, user_id } = getActiveFilters();
-  const url = `/api/strategy_sets${buildQuery({ exchange, pair, user_id })}`;
+  const url = `/api/strategy_sets${buildQuerySafe({ exchange, pair, user_id })}`;
 
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
+//  const res = await fetch(url, { cache: "no-store" });
+//  if (!res.ok) {
+//    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
+//    return;
+//  }
+//  const sets = await res.json();
+
+  let sets;
+  try {
+    const res = await apiFetch(url);
+    sets = await asJson(res);
+  } catch (e) {
+    console.error('[loadSets] failed:', e);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8">${String(e)}</td></tr>`;
     return;
   }
-  const sets = await res.json();
+  if (!Array.isArray(sets)) {
+    console.error('Unexpected payload for strategy_sets:', sets);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Bad payload</td></tr>`;
+    return;
+  }
+
   console.log('[loadSets] got items=', sets.length, sets.slice(0,3));
 
 
@@ -200,7 +248,7 @@ async function toggleSetActive(st) {
     description: st.description ?? null,
     exchange: (st.exchange || '').toLowerCase() || null,
     pair: (st.pair || '').toUpperCase() || null,
-    set_type: st.set_type ?? null,
+    set_type: normSetType(st.set_type),
     active: !st.active,
   };
   let res = await apiFetch(`/api/strategy_sets/${st.id}`, {
