@@ -270,8 +270,12 @@ async function deleteSet(id) {
 }
 
 // експорт у глобал (на випадок ручного виклику з консолі)
-window.loadSets = loadSets; 
 window.addSet = addSet;
 window.updateSet = updateSet;
 window.deleteSet = deleteSet;
+window.loadSets = loadSets;
+
+// автоматично підвантажити сети при завантаженні, якщо є фільтри
+if (document.readyState !== 'loading') loadSets();
+else window.addEventListener('DOMContentLoaded', loadSets);
 
