@@ -1,10 +1,14 @@
 from sqlalchemy import (
     Table, Column, Integer, String, Boolean, ForeignKey,
     BigInteger, MetaData, Float, MetaData, DateTime,
-    UniqueConstraint, Text, text
+    UniqueConstraint, Text, text, Enum
 )
 from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy.sql import text
 from datetime import datetime
+
+# Якщо в БД enum вже створений:
+from sqlalchemy.dialects.postgresql import ENUM
 
 metadata = MetaData()
 
@@ -69,6 +73,12 @@ strategy_sets = Table(
     Column("created_at", DateTime, nullable=False, server_default=text("now()")),
     Column("exchange", Text),
     Column("pair", Text),
+    Column(
+        "set_type",
+        ENUM("default", "scalping", "aggressive", "combiner", name="strategy_set_type"),
+        nullable=False,
+        server_default="default"
+    ),
 )
 
 # --- strategy_sets_rules ---
