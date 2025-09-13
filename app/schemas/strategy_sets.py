@@ -15,7 +15,7 @@ class StrategySetBase(BaseModel):
     active: bool = False
     exchange: Optional[str] = None
     pair: Optional[str] = None
-    set_type: Optional[StrategySetType] = None
+    set_type: Optional[str] = None
 
 class StrategySetCreate(StrategySetBase): pass
 

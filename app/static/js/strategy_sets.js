@@ -129,7 +129,7 @@ async function addSet() {
 
 async function loadSets() {
   const tbody = document.getElementById('setsTable');
-  if (tbody) tbody.innerHTML = `<tr><td colspan="8">Loading…</td></tr>`;
+  if (tbody) tbody.innerHTML = `<tr><td colspan="7">Loading…</td></tr>`;
 
   // беремо ТІЛЬКИ exchange/pair (user_id все одно приходить з токена на бекенді)
   const { exchange, pair, user_id } = getActiveFilters();
