@@ -76,7 +76,7 @@ strategy_sets = Table(
     Column(
         "set_type",
         ENUM("default", "scalping", "aggressive", "combiner", name="strategy_set_type"),
-        nullable=False,
+        nullable=True,
         server_default="default"
     ),
 )
