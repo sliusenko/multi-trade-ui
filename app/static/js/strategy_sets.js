@@ -168,7 +168,7 @@ async function loadSets() {
   const { exchange, pair, user_id } = getActiveFilters();
   const url = `/api/strategy_sets${buildQuerySafe({ exchange, pair, user_id })}`;
 
-//  const res = await fetch(url, { cache: "no-store" });
+//  const res = await apiFetch(url, { cache: "no-store" });
 //  if (!res.ok) {
 //    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
 //    return;
@@ -228,7 +228,7 @@ async function loadSets() {
 
 async function updateSet(id, body) {
   console.log('[updateSet] called', id, body);
-  let res = await fetch('/api/strategy_sets', {
+  let res = await apiFetch('/api/strategy_sets', {
     method: 'PUT',
     body: JSON.stringify(body),
   });
