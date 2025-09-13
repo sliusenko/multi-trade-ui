@@ -128,6 +128,7 @@ async function addSet() {
 }
 
 async function loadSets() {
+  console.log('[loadSets] url=', url);
   const tbody = document.getElementById('setsTable');
   if (tbody) tbody.innerHTML = `<tr><td colspan="7">Loading…</td></tr>`;
 
@@ -135,13 +136,19 @@ async function loadSets() {
   const { exchange, pair, user_id } = getActiveFilters();
   const url = `/api/strategy_sets${buildQuery({ exchange, pair, user_id })}`;
 
-  const res = await apiFetch(url);
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
     return;
   }
   const sets = await res.json();
+  console.log('[loadSets] got items=', sets.length, sets.slice(0,3));
 
+
+    if (!Array.isArray(sets)) {
+      console.error('Unexpected payload for strategy_sets:', sets);
+      return;
+    }
   // 1) таблиця
   if (tbody) {
     tbody.innerHTML = '';
@@ -173,7 +180,7 @@ async function loadSets() {
 
 async function updateSet(id, body) {
   console.log('[updateSet] called', id, body);
-  let res = await apiFetch(`/api/strategy_sets/${id}`, {
+  let res = await fetch('/api/strategy_sets', {
     method: 'PUT',
     body: JSON.stringify(body),
   });
