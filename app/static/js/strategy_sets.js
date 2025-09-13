@@ -36,7 +36,7 @@ function setPayloadFromForm() {
     description: sVal("set_desc") || null,
     exchange: sVal("set_exchange").toLowerCase() || null,
     pair: sVal("set_pair").toUpperCase() || null,
-    set_type: sVal("set_type") || null,
+    set_type: sVal("set_set_type") || null,
     active: sBool("set_active"),
   };
 }
@@ -121,7 +121,7 @@ async function addSet() {
   }
 
   // очистити форму
-  ["set_name","set_desc","set_exchange","set_pair","set_type"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ["set_name","set_desc","set_exchange","set_pair","set_set_type"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const ac = document.getElementById('set_active'); if (ac) ac.checked = false;
 
   await loadSets();
