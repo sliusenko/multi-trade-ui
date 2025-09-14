@@ -141,8 +141,9 @@ async function loadAndRender() {
   const interval  = document.getElementById("interval").value;
   const flh_tf    = document.getElementById("flh_timeframe").value;
 
+  const user_id = document.getElementById("user_id").value.trim();
   const url = "/api/forecast_vs_actual_long" + buildQuerySafe({
-    exchange, pair, timeframe, interval, flh_timeframe: flh_tf
+    exchange, pair, timeframe, interval, flh_timeframe: flh_tf, user_id
   });
 
   const resp = await asJson(fetch(url));
@@ -171,8 +172,9 @@ document.getElementById("btnExport").addEventListener("click", () => {
   const interval  = document.getElementById("interval").value;
   const flh_tf    = document.getElementById("flh_timeframe").value;
 
+  const user_id = document.getElementById("user_id").value.trim();
   const url = "/api/forecast_vs_actual_long" + buildQuerySafe({
-    exchange, pair, timeframe, interval, flh_timeframe: flh_tf
+    exchange, pair, timeframe, interval, flh_timeframe: flh_tf, user_id
   });
 
   fetch(url).then(r=>r.json()).then(resp=>{
