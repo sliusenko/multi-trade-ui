@@ -34,6 +34,18 @@ user_active_pairs = Table(
 )
 
 
+bot_activity_log = Table(
+    "bot_activity_log",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("timestamp", TIMESTAMP(timezone=True), nullable=False, server_default=func.now()),
+    Column("exchange", String, nullable=False),
+    Column("pair", String, nullable=False),
+    Column("signal", Text, nullable=False),
+    Column("comment", Text, nullable=False),
+    Column("signal_type", String, nullable=False),
+)
+
 strategy_rules = Table(
     "strategy_rules",
     metadata,
