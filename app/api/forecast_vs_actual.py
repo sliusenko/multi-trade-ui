@@ -49,7 +49,7 @@ async def forecast_vs_actual_data(
           AND flh.exchange  = ad.exchange
           AND flh.user_id   = ad.user_id
           AND flh.timeframe = ad.timeframe
-          AND date_trunc('minute', flh.timestamp) = date_trunc('minute', ad.timestamp)
+          AND date_trunc('minute', ad.timestamp) BETWEEN flh.timestamp - INTERVAL '30 seconds' AND flh.timestamp + INTERVAL '30 seconds'
         WHERE flh.pair       = :pair
           AND flh.exchange   = :exchange
           AND flh.user_id    = :user_id
