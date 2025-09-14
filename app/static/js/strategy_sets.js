@@ -328,46 +328,46 @@ async function deleteSet(id) {
 // ========= Додаємо підписки на фільтри з дебаунсом =========
 
 // Fallback, якщо десь не визначена
-function getActiveFilters() {
-  if (typeof window.getActiveFilters === 'function') return window.getActiveFilters();
-  const userSel = document.getElementById('userSelect');
-  const exSel   = document.getElementById('exchangeSelect');
-  const pairSel = document.getElementById('pairSelect');
-  return {
-    user_id:  userSel?.value?.trim() || '',
-    exchange: exSel?.value?.trim().toLowerCase() || '',
-    pair:     pairSel?.value?.trim().toUpperCase() || '',
-  };
-}
+// function getActiveFilters() {
+//   if (typeof window.getActiveFilters === 'function') return window.getActiveFilters();
+//   const userSel = document.getElementById('userSelect');
+//   const exSel   = document.getElementById('exchangeSelect');
+//   const pairSel = document.getElementById('pairSelect');
+//   return {
+//     user_id:  userSel?.value?.trim() || '',
+//     exchange: exSel?.value?.trim().toLowerCase() || '',
+//     pair:     pairSel?.value?.trim().toUpperCase() || '',
+//   };
+// }
 
-function debounce(fn, ms=200) {
-  let t; 
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
+// function debounce(fn, ms=200) {
+//   let t; 
+//   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+// }
 
-function attachFilterHandlersOnce() {
-  if (window.__setsFiltersBound__) return;
-  window.__setsFiltersBound__ = true;
+// function attachFilterHandlersOnce() {
+//   if (window.__setsFiltersBound__) return;
+//   window.__setsFiltersBound__ = true;
 
-  const onChange = debounce(async () => {
-    // якщо інший код перезавантажує список пар — все одно просто перезавантажимо сети
-    await loadSets();
-  }, 200);
+//   const onChange = debounce(async () => {
+//     // якщо інший код перезавантажує список пар — все одно просто перезавантажимо сети
+//     await loadSets();
+//   }, 200);
 
-  document.getElementById('userSelect')   ?.addEventListener('change', onChange);
-  document.getElementById('exchangeSelect')?.addEventListener('change', onChange);
-  document.getElementById('pairSelect')    ?.addEventListener('change', onChange);
-  console.log('[strategy_sets] filter handlers attached');
-}
+//   document.getElementById('userSelect')   ?.addEventListener('change', onChange);
+//   document.getElementById('exchangeSelect')?.addEventListener('change', onChange);
+//   document.getElementById('pairSelect')    ?.addEventListener('change', onChange);
+//   console.log('[strategy_sets] filter handlers attached');
+// }
 
-// Після завантаження DOM підвʼязуємося і робимо перше завантаження
-function bootSetsModule() {
-  attachFilterHandlersOnce();
-  loadSets();
-}
+// // Після завантаження DOM підвʼязуємося і робимо перше завантаження
+// function bootSetsModule() {
+//   attachFilterHandlersOnce();
+//   loadSets();
+// }
 
-if (document.readyState !== 'loading') bootSetsModule();
-else window.addEventListener('DOMContentLoaded', bootSetsModule);
+// if (document.readyState !== 'loading') bootSetsModule();
+// else window.addEventListener('DOMContentLoaded', bootSetsModule);
 
 
 // експорт у глобал (на випадок ручного виклику з консолі)
@@ -377,6 +377,6 @@ window.deleteSet = deleteSet;
 window.loadSets = loadSets;
 
 // автоматично підвантажити сети при завантаженні, якщо є фільтри
-// if (document.readyState !== 'loading') loadSets();
-// else window.addEventListener('DOMContentLoaded', loadSets);
+if (document.readyState !== 'loading') loadSets();
+else window.addEventListener('DOMContentLoaded', loadSets);
 
