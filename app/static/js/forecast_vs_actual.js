@@ -76,6 +76,64 @@ function renderChart(points, meta) {
   });
 }
 
+async function loadChart() {
+  const exchange = document.getElementById("exchange").value.trim();
+  const pair = document.getElementById("pair").value.trim();
+  const timeframe = document.getElementById("timeframe").value.trim();
+  const interval = document.getElementById("interval").value;
+
+  const res = await fetch(`/api/forecast_vs_actual_long?exchange=${exchange}&pair=${pair}&timeframe=${timeframe}&interval=${interval}`);
+  const data = await res.json();
+  const rows = data.rows || [];
+
+  const ctx = document.getElementById("chartCanvas").getContext("2d");
+
+  const labels = rows.map(r => new Date(r.ts_hour));
+  const predicted = rows.map(r => r.predicted_price);
+  const actual = rows.map(r => r.actual_price);
+
+  if (window.chartInstance) {
+    window.chartInstance.destroy();
+  }
+
+  window.chartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Predicted",
+          data: predicted,
+          borderColor: "blue",
+          fill: false
+        },
+        {
+          label: "Actual",
+          data: actual,
+          borderColor: "orange",
+          borderDash: [5, 5],
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          type: "time",
+          time: {
+            unit: "hour"
+          }
+        },
+        y: {
+          beginAtZero: false
+        }
+      }
+    }
+  });
+}
+
+
 async function loadAndRender() {
   const exchange  = document.getElementById("exchange").value.trim();
   const pair      = document.getElementById("pair").value.trim();

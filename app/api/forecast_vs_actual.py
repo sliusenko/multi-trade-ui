@@ -1,42 +1,44 @@
-from datetime import datetime, timedelta
-from typing import Optional, Literal
+from datetime import datetime
+from typing import Optional
 
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
-
-from app.services.db import engine  # <- твій async engine
+from app.services.db import engine  # твій AsyncEngine
+from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 VALID_INTERVALS = {
-    "1h":  "1 hour",
-    "4h":  "4 hours",
+    "1h": "1 hour",
+    "4h": "4 hours",
     "12h": "12 hours",
-    "1d":  "1 day",
-    "3d":  "3 days",
+    "1d": "1 day",
+    "3d": "3 days"
 }
 
 @router.get("/forecast-vs-actual", response_class=HTMLResponse)
 async def forecast_vs_actual_page(request: Request):
     return templates.TemplateResponse("forecast_vs_actual.html", {"request": request})
 
-@router.get("/api/forecast-vs-actual/data")
+
+@router.get("/api/forecast_vs_actual_long")
 async def forecast_vs_actual_data(
+    request: Request,
     exchange: str,
     pair: str,
     timeframe: str,
-    interval: str = Query("4h"),
-    flh_timeframe: str = Query("5m"),
-    user_id: Optional[int] = 0
+    interval: str,
+    flh_timeframe: str = "5m",
+    user_id: Optional[int] = None
 ):
-    if interval not in VALID_INTERVALS:
-        return {"error": "invalid interval", "allowed": list(VALID_INTERVALS)}
+    interval_sql = VALID_INTERVALS.get(interval)
+    if not interval_sql:
+        return {"error": "❌ Невірний інтервал. Доступні: " + ", ".join(VALID_INTERVALS)}
 
-    sql = text("""
+    sql = text(f"""
         SELECT
             date_trunc('hour', flh.timestamp)      AS ts_hour,
             AVG(flh.predicted_price)               AS predicted_price,
@@ -51,39 +53,21 @@ async def forecast_vs_actual_data(
         WHERE flh.pair       = :pair
           AND flh.exchange   = :exchange
           AND flh.user_id    = :user_id
-          AND flh.timeframe  = :flh_timeframe
-          AND flh.timestamp BETWEEN NOW() - INTERVAL :interval AND NOW()
+          AND flh.timeframe  = :timeframe
+          AND flh.timestamp BETWEEN NOW() - INTERVAL '{interval_sql}' AND NOW()
         GROUP BY ts_hour
         ORDER BY ts_hour
     """)
 
     params = {
-        "pair": pair.upper(),
-        "exchange": exchange.lower(),
-        "user_id": user_id,
-        "flh_timeframe": flh_timeframe,
-        "interval": VALID_INTERVALS[interval],
+        "pair": pair,
+        "exchange": exchange,
+        "user_id": user_id or request.session.get("user_id") or 0,
+        "timeframe": flh_timeframe,
     }
 
-    assert isinstance(engine, AsyncEngine), "Expected AsyncEngine"
     async with engine.connect() as conn:
         result = await conn.execute(sql, params)
-        rows = [dict(x._mapping) for x in result.all()]
+        rows = [dict(r._mapping) for r in result.fetchall()]
 
-    points = [
-        {
-            "ts": r["ts_hour"].isoformat(),
-            "predicted_price": float(r["predicted_price"]) if r["predicted_price"] is not None else None,
-            "actual_price": float(r["actual_price"]) if r["actual_price"] is not None else None,
-        }
-        for r in rows
-    ]
-
-    return {
-        "exchange": exchange,
-        "pair": pair,
-        "timeframe": timeframe,
-        "interval": interval,
-        "flh_timeframe": flh_timeframe,
-        "points": points,
-    }
+    return {"rows": rows}
