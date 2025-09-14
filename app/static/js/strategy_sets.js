@@ -159,72 +159,72 @@ async function addSet() {
   await loadSets();
 }
 
-async function loadSets() {
-  console.log('[loadSets] url=', url);
-  const tbody = document.getElementById('setsTable');
-  if (tbody) tbody.innerHTML = `<tr><td colspan="7">Loading…</td></tr>`;
+// async function loadSets() {
+//   console.log('[loadSets] url=', url);
+//   const tbody = document.getElementById('setsTable');
+//   if (tbody) tbody.innerHTML = `<tr><td colspan="7">Loading…</td></tr>`;
 
-  // беремо ТІЛЬКИ exchange/pair (user_id все одно приходить з токена на бекенді)
-  const { exchange, pair, user_id } = getActiveFilters();
-  const url = `/api/strategy_sets${buildQuerySafe({ exchange, pair, user_id })}`;
+//   // беремо ТІЛЬКИ exchange/pair (user_id все одно приходить з токена на бекенді)
+//   const { exchange, pair, user_id } = getActiveFilters();
+//   const url = `/api/strategy_sets${buildQuerySafe({ exchange, pair, user_id })}`;
 
-//  const res = await apiFetch(url, { cache: "no-store" });
-//  if (!res.ok) {
-//    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
-//    return;
-//  }
-//  const sets = await res.json();
+// //  const res = await apiFetch(url, { cache: "no-store" });
+// //  if (!res.ok) {
+// //    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
+// //    return;
+// //  }
+// //  const sets = await res.json();
 
-  let sets;
-  try {
-    const res = await apiFetch(url);
-    sets = await asJson(res);
-  } catch (e) {
-    console.error('[loadSets] failed:', e);
-    if (tbody) tbody.innerHTML = `<tr><td colspan="8">${String(e)}</td></tr>`;
-    return;
-  }
-  if (!Array.isArray(sets)) {
-    console.error('Unexpected payload for strategy_sets:', sets);
-    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Bad payload</td></tr>`;
-    return;
-  }
+//   let sets;
+//   try {
+//     const res = await apiFetch(url);
+//     sets = await asJson(res);
+//   } catch (e) {
+//     console.error('[loadSets] failed:', e);
+//     if (tbody) tbody.innerHTML = `<tr><td colspan="8">${String(e)}</td></tr>`;
+//     return;
+//   }
+//   if (!Array.isArray(sets)) {
+//     console.error('Unexpected payload for strategy_sets:', sets);
+//     if (tbody) tbody.innerHTML = `<tr><td colspan="8">Bad payload</td></tr>`;
+//     return;
+//   }
 
-  console.log('[loadSets] got items=', sets.length, sets.slice(0,3));
+//   console.log('[loadSets] got items=', sets.length, sets.slice(0,3));
 
 
-    if (!Array.isArray(sets)) {
-      console.error('Unexpected payload for strategy_sets:', sets);
-      return;
-    }
-  // 1) таблиця
-  if (tbody) {
-    tbody.innerHTML = '';
-    sets.forEach(s => tbody.appendChild(renderSetRow(s)));
-  }
+//     if (!Array.isArray(sets)) {
+//       console.error('Unexpected payload for strategy_sets:', sets);
+//       return;
+//     }
+//   // 1) таблиця
+//   if (tbody) {
+//     tbody.innerHTML = '';
+//     sets.forEach(s => tbody.appendChild(renderSetRow(s)));
+//   }
 
-  // 2) селект зверху "Rules in Set"
-  const setSelect = document.getElementById('setSelect');
-  if (setSelect) {
-    const keep = setSelect.value;
-    setSelect.innerHTML = '';
-    sets.forEach(s => {
-      const o = document.createElement('option');
-      o.value = s.id;
-      // покажемо назву + (ex/pair), якщо є
-      const extra = [s.exchange, s.pair].filter(Boolean).join(' ');
-      o.textContent = extra ? `${s.name} (${extra})` : s.name;
-      setSelect.appendChild(o);
-    });
-    if (keep && [...setSelect.options].some(o => o.value === keep)) {
-      setSelect.value = keep;
-    }
-    // перевантажити правила для вибраного сету
-    if (typeof loadSetRules === 'function' && setSelect.value) {
-      loadSetRules(setSelect.value);
-    }
-  }
-}
+//   // 2) селект зверху "Rules in Set"
+//   const setSelect = document.getElementById('setSelect');
+//   if (setSelect) {
+//     const keep = setSelect.value;
+//     setSelect.innerHTML = '';
+//     sets.forEach(s => {
+//       const o = document.createElement('option');
+//       o.value = s.id;
+//       // покажемо назву + (ex/pair), якщо є
+//       const extra = [s.exchange, s.pair].filter(Boolean).join(' ');
+//       o.textContent = extra ? `${s.name} (${extra})` : s.name;
+//       setSelect.appendChild(o);
+//     });
+//     if (keep && [...setSelect.options].some(o => o.value === keep)) {
+//       setSelect.value = keep;
+//     }
+//     // перевантажити правила для вибраного сету
+//     if (typeof loadSetRules === 'function' && setSelect.value) {
+//       loadSetRules(setSelect.value);
+//     }
+//   }
+// }
 
 async function updateSet(id, body) {
   console.log('[updateSet] called', id, body);
@@ -269,13 +269,114 @@ async function deleteSet(id) {
   await loadSets();
 }
 
+
+// ========= FIX loadSets(): спочатку формуємо url, потім логуємо =========
+async function loadSets() {
+  const tbody = document.getElementById('setsTable');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="7">Loading…</td></tr>`;
+
+  // беремо ТІЛЬКИ exchange/pair/user_id (якщо треба)
+  const { exchange, pair, user_id } = getActiveFilters();
+  const url = `/api/strategy_sets${buildQuerySafe({ exchange, pair, user_id })}`;
+  console.log('[loadSets] url=', url);
+
+  let sets;
+  try {
+    const res = await apiFetch(url, { cache: 'no-store' });
+    sets = await asJson(res);
+  } catch (e) {
+    console.error('[loadSets] failed:', e);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8">${String(e)}</td></tr>`;
+    return;
+  }
+  if (!Array.isArray(sets)) {
+    console.error('Unexpected payload for strategy_sets:', sets);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Bad payload</td></tr>`;
+    return;
+  }
+
+  console.log('[loadSets] got items=', sets.length, sets.slice(0,3));
+
+  // 1) таблиця
+  if (tbody) {
+    tbody.innerHTML = '';
+    sets.forEach(s => tbody.appendChild(renderSetRow(s)));
+  }
+
+  // 2) селект зверху "Rules in Set"
+  const setSelect = document.getElementById('setSelect');
+  if (setSelect) {
+    const keep = setSelect.value;
+    setSelect.innerHTML = '';
+    sets.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id;
+      const extra = [s.exchange, s.pair].filter(Boolean).join(' ');
+      o.textContent = extra ? `${s.name} (${extra})` : s.name;
+      setSelect.appendChild(o);
+    });
+    if (keep && [...setSelect.options].some(o => o.value === keep)) {
+      setSelect.value = keep;
+    }
+    if (typeof loadSetRules === 'function' && setSelect.value) {
+      loadSetRules(setSelect.value);
+    }
+  }
+}
+
+
+// ========= Додаємо підписки на фільтри з дебаунсом =========
+
+// Fallback, якщо десь не визначена
+function getActiveFilters() {
+  if (typeof window.getActiveFilters === 'function') return window.getActiveFilters();
+  const userSel = document.getElementById('userSelect');
+  const exSel   = document.getElementById('exchangeSelect');
+  const pairSel = document.getElementById('pairSelect');
+  return {
+    user_id:  userSel?.value?.trim() || '',
+    exchange: exSel?.value?.trim().toLowerCase() || '',
+    pair:     pairSel?.value?.trim().toUpperCase() || '',
+  };
+}
+
+function debounce(fn, ms=200) {
+  let t; 
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function attachFilterHandlersOnce() {
+  if (window.__setsFiltersBound__) return;
+  window.__setsFiltersBound__ = true;
+
+  const onChange = debounce(async () => {
+    // якщо інший код перезавантажує список пар — все одно просто перезавантажимо сети
+    await loadSets();
+  }, 200);
+
+  document.getElementById('userSelect')   ?.addEventListener('change', onChange);
+  document.getElementById('exchangeSelect')?.addEventListener('change', onChange);
+  document.getElementById('pairSelect')    ?.addEventListener('change', onChange);
+  console.log('[strategy_sets] filter handlers attached');
+}
+
+// Після завантаження DOM підвʼязуємося і робимо перше завантаження
+function bootSetsModule() {
+  attachFilterHandlersOnce();
+  loadSets();
+}
+
+if (document.readyState !== 'loading') bootSetsModule();
+else window.addEventListener('DOMContentLoaded', bootSetsModule);
+
+
 // експорт у глобал (на випадок ручного виклику з консолі)
 window.addSet = addSet;
 window.updateSet = updateSet;
 window.deleteSet = deleteSet;
 window.loadSets = loadSets;
 
-// автоматично підвантажити сети при завантаженні, якщо є фільтри
-if (document.readyState !== 'loading') loadSets();
-else window.addEventListener('DOMContentLoaded', loadSets);
+// // автоматично підвантажити сети при завантаженні, якщо є фільтри
+// if (document.readyState !== 'loading') loadSets();
+// else window.addEventListener('DOMContentLoaded', loadSets);
 
