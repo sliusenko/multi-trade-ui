@@ -70,4 +70,10 @@ async def forecast_vs_actual_data(
         result = await conn.execute(sql, params)
         rows = [dict(r._mapping) for r in result.fetchall()]
 
-    return {"rows": rows}
+    return {
+        "points": rows,  # ← JS чекає поле `points`
+        "exchange": exchange,
+        "pair": pair,
+        "timeframe": timeframe,
+        "interval": interval,
+    }
