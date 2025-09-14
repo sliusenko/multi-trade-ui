@@ -1,8 +1,9 @@
 from sqlalchemy import (
     Table, Column, Integer, String, Boolean, ForeignKey,
-    BigInteger, MetaData, Float, MetaData, DateTime,
-    UniqueConstraint, Text, text, Enum
+    BigInteger, Float, MetaData, DateTime, PrimaryKeyConstraint,
+    UniqueConstraint, Text, text, Enum, Numeric, Index
 )
+
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.sql import text, func 
 from datetime import datetime
@@ -44,6 +45,20 @@ bot_activity_log = Table(
     Column("signal", Text, nullable=False),
     Column("comment", Text, nullable=False),
     Column("signal_type", String, nullable=False),
+)
+
+forecast_longterm_history = Table(
+    "forecast_longterm_history",
+    metadata,
+    Column("pair", Text, nullable=False),
+    Column("timestamp", DateTime(timezone=True), nullable=False),
+    Column("predicted_price", Float),
+    Column("forecasted_at", DateTime(timezone=True), server_default=text("now()")),
+    Column("exchange", Text, nullable=False),
+    Column("forecast_delta", Float),
+    Column("forecast_acceleration", Float),
+    Column("user_id", BigInteger, nullable=False, server_default=text("0")),
+    Column("timeframe", Text, nullable=False, server_default=text("'1d'::text")),
 )
 
 strategy_rules = Table(
@@ -142,4 +157,110 @@ role_permissions = Table(
     Column("role_id", Integer, ForeignKey("roles.role_id", ondelete="CASCADE")),
     Column("permission_id", Integer, ForeignKey("permissions.permission_id", ondelete="CASCADE")),
     UniqueConstraint("role_id", "permission_id", name="uix_role_permission")  # Заборона дублікатів
+)
+
+
+analysis_data = Table(
+    "analysis_data",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("pair", Text, nullable=False),
+    Column("exchange", Text, nullable=False),
+    Column("user_id", Integer, nullable=False),
+    Column("timeframe", Text, nullable=False),
+    Column("timestamp", DateTime(timezone=True), nullable=False),
+
+    # ключові поля для графіка
+    Column("price", Numeric),
+
+    # (далі — найчастіше використовувані у твоєму UI/боті; за потреби додай інші)
+    Column("change", Numeric),
+    Column("rsi", Numeric),
+    Column("rsi_z", Numeric),
+    Column("rsi_z_sell_threshold", Numeric),
+    Column("rsi_z_buy_threshold", Numeric),
+    Column("volume", Numeric),
+    Column("ma_vol_5", Numeric),
+    Column("ma_vol_10", Numeric),
+    Column("avg_volume", Numeric),
+    Column("macd", Numeric),
+    Column("macd_signal", Numeric),
+    Column("macd_prev", Numeric),
+    Column("macd_signal_prev", Numeric),
+    Column("sma_50", Numeric),
+    Column("sma_200", Numeric),
+    Column("volatility", Numeric),
+    Column("delta_price", Numeric),
+    Column("acceleration", Numeric),
+    Column("open", Numeric),
+    Column("close", Numeric),
+    Column("high", Numeric),
+    Column("low", Numeric),
+    Column("rsi_period", Integer),
+    Column("price_z", Numeric(12, 6)),
+    Column("volume_z", Numeric(12, 6)),
+    Column("macd_diff_z", Numeric(12, 6)),
+    Column("volatility_z", Numeric(12, 6)),
+    Column("sma_50_trend", Integer),
+    Column("sma_200_trend", Integer),
+    Column("sma_50_trend_strength", Float),
+    Column("sma_200_trend_strength", Float),
+    Column("bb_period", Integer),
+    Column("adx", Numeric),
+    Column("plus_di", Numeric),
+    Column("minus_di", Numeric),
+
+    # у тебе в БД є унікальний ключ на (pair, exchange, user_id, timeframe, timestamp)
+    UniqueConstraint(
+        "pair", "exchange", "user_id", "timeframe", "timestamp",
+        name="analysis_data_pair_exchange_user_id_timeframe_timestamp_key"
+    ),
+)
+
+# індекси як на скрінах
+Index(
+    "idx_ad_user_pair_tf_ts",
+    analysis_data.c.user_id,
+    analysis_data.c.exchange,
+    analysis_data.c.pair,
+    analysis_data.c.timeframe,
+    analysis_data.c.timestamp.desc(),
+)
+Index(
+    "idx_analysis_data_price_z",
+    analysis_data.c.pair,
+    analysis_data.c.exchange,
+    analysis_data.c.timeframe,
+    analysis_data.c.price_z,
+)
+Index(
+    "idx_analysis_data_sma_trends",
+    analysis_data.c.pair,
+    analysis_data.c.exchange,
+    analysis_data.c.timeframe,
+    analysis_data.c.sma_50_trend,
+    analysis_data.c.sma_200_trend,
+)
+Index(
+    "idx_analysis_data_ts_brin",
+    analysis_data.c.timestamp,
+    postgresql_using="brin",
+    postgresql_with={"pages_per_range": "32"},
+)
+# часткові індекси по конкретних таймфреймах
+Index(
+    "idx_analysis_15m",
+    analysis_data.c.user_id,
+    analysis_data.c.exchange,
+    analysis_data.c.pair,
+    analysis_data.c.timestamp.desc(),
+    postgresql_where=(analysis_data.c.timeframe == text("'15m'::text")),
+)
+Index(
+    "idx_analysis_5m",
+    analysis_data.c.user_id,
+    analysis_data.c.exchange,
+    analysis_data.c.pair,
+    analysis_data.c.timestamp.desc(),
+    postgresql_where=(analysis_data.c.timeframe == text("'5m'::text")),
 )

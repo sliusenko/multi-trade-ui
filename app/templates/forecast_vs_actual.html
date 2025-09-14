@@ -12,7 +12,6 @@
     body { background:#0b0f14; color:#e9eef5; padding:20px; }
     .card { background:#111826; border:1px solid #1f2a3a; }
     .form-control, .form-select { background:#0f1623; color:#e9eef5; border:1px solid #243244; }
-    .badge-ind { background:#223047; }
   </style>
 </head>
 <body>
@@ -25,18 +24,18 @@
     <form id="controls" class="row g-2 align-items-end">
       <div class="col-12 col-md-2">
         <label class="form-label">Exchange</label>
-        <input class="form-control" id="exchange" placeholder="binance" value="binance"/>
+        <input class="form-control" id="exchange" value="binance" placeholder="binance"/>
       </div>
       <div class="col-12 col-md-2">
         <label class="form-label">Pair</label>
-        <input class="form-control" id="pair" placeholder="BTCUSDT" value="BTCUSDT"/>
+        <input class="form-control" id="pair" value="BTCUSDT" placeholder="BTCUSDT"/>
       </div>
       <div class="col-6 col-md-2">
         <label class="form-label">Timeframe (label)</label>
-        <input class="form-control" id="timeframe" placeholder="1m" value="1m"/>
+        <input class="form-control" id="timeframe" value="1m" placeholder="1m"/>
       </div>
       <div class="col-6 col-md-2">
-        <label class="form-label">FLH Timeframe</label>
+        <label class="form-label">FLH TF</label>
         <select class="form-select" id="flh_timeframe">
           <option value="5m" selected>5m</option>
           <option value="1m">1m</option>
@@ -53,8 +52,9 @@
           <option value="3d">3d</option>
         </select>
       </div>
-      <div class="col-6 col-md-2">
+      <div class="col-6 col-md-2 d-flex gap-2">
         <button class="btn btn-primary w-100" type="submit">Побудувати</button>
+        <button class="btn btn-outline-light" id="btnExport" type="button">CSV</button>
       </div>
     </form>
   </div>
@@ -64,119 +64,6 @@
     <div id="empty" class="text-center py-4 d-none">❌ Немає даних для обраного інтервалу.</div>
   </div>
 
-  <script>
-    // === helpers (можеш винести у свій спільний файл) ===
-    async function asJson(x) {
-      if (x && typeof x === "object" && "ok" in x && typeof x.json === "function") {
-        if (!x.ok) {
-          const text = await x.text().catch(()=>"");
-          throw new Error(`HTTP ${x.status} ${text}`);
-        }
-        return await x.json();
-      }
-      return x;
-    }
-    function buildQuerySafe(params) {
-      const q = new URLSearchParams();
-      for (const [k, v] of Object.entries(params || {})) {
-        if (v == null) continue;
-        const s = String(v).trim();
-        if (!s || ["all","всі","усі"].includes(s.toLowerCase())) continue;
-        q.append(k, s);
-      }
-      const qs = q.toString();
-      return qs ? `?${qs}` : "";
-    }
-
-    // === Chart.js setup ===
-    let chart;
-    function renderChart(rows, meta) {
-      const ctx = document.getElementById("chart");
-      if (chart) { chart.destroy(); }
-
-      const labels = rows.map(r => r.ts); // ISO timestamps
-      const predicted = rows.map(r => r.predicted_price);
-      const actual    = rows.map(r => r.actual_price);
-
-      chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            { label: "Прогноз", data: predicted, tension: 0.25, borderWidth: 2, spanGaps: true },
-            { label: "Факт",    data: actual,    tension: 0.25, borderDash: [6,4], borderWidth: 2, pointRadius: 0, spanGaps: true },
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { labels: { color: "#cfe3ff" } },
-            title: {
-              display: true,
-              text: `${meta.pair} (${meta.exchange.toUpperCase()}, ${meta.timeframe}) — Прогноз vs Факт (${meta.interval})`,
-              color: "#e9eef5"
-            },
-            tooltip: {
-              mode: "index",
-              intersect: false,
-              callbacks: {
-                title: (items) => {
-                  const dt = luxon.DateTime.fromISO(items[0].label);
-                  return dt.toFormat("yyyy-LL-dd HH:mm");
-                }
-              }
-            }
-          },
-          interaction: { mode: "index", intersect: false },
-          scales: {
-            x: {
-              type: "time",
-              time: { unit: "hour" },
-              ticks: { color: "#9bb2d1" },
-              grid: { color: "rgba(155,178,209,0.1)" }
-            },
-            y: {
-              ticks: { color: "#9bb2d1" },
-              grid: { color: "rgba(155,178,209,0.1)" }
-            }
-          }
-        }
-      });
-    }
-
-    async function loadAndRender() {
-      const exchange  = document.getElementById("exchange").value.trim();
-      const pair      = document.getElementById("pair").value.trim();
-      const timeframe = document.getElementById("timeframe").value.trim();
-      const interval  = document.getElementById("interval").value;
-      const flh_tf    = document.getElementById("flh_timeframe").value;
-
-      const url = "/api/forecast_vs_actual_long" + buildQuerySafe({
-        exchange, pair, timeframe, interval, flh_timeframe: flh_tf
-      });
-
-      const resp = await asJson(fetch(url));
-      const points = resp.points || [];
-
-      const empty = document.getElementById("empty");
-      if (!points.length) {
-        empty.classList.remove("d-none");
-        if (chart) chart.destroy();
-        return;
-      } else {
-        empty.classList.add("d-none");
-      }
-      renderChart(points, resp);
-    }
-
-    document.getElementById("controls").addEventListener("submit", (e) => {
-      e.preventDefault();
-      loadAndRender().catch(err => alert(err.message));
-    });
-
-    // авто-рендер стартових значень
-    loadAndRender().catch(console.error);
-  </script>
+  <script src="/static/forecast_vs_actual.js"></script>
 </body>
 </html>
