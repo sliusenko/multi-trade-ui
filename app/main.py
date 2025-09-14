@@ -33,7 +33,7 @@ app.include_router(weights_router)
 app.include_router(ui_router)
 app.include_router(analysis_router)
 app.include_router(bot_activity_router)
-app.register_blueprint(forecast_bp)
+app.include_router(forecast_vs_actual_router)
 app.router.redirect_slashes = False
 
 # === Middleware для сесій ===
