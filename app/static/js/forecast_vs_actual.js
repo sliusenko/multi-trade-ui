@@ -141,7 +141,7 @@ async function loadAndRender() {
   const interval  = document.getElementById("interval").value;
   const flh_tf    = document.getElementById("flh_timeframe").value;
 
-  const url = "/api/forecast-vs-actual/data" + buildQuerySafe({
+  const url = "/api/forecast_vs_actual_long" + buildQuerySafe({
     exchange, pair, timeframe, interval, flh_timeframe: flh_tf
   });
 
