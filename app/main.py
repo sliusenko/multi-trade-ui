@@ -15,7 +15,7 @@ from app.api.strategy_sets_rules import router as strategy_sets_rules
 from app.api.strategy_weights import router as weights_router
 from app.api.analysis_data import router as analysis_router
 from app.api.bot_activity_routes import router as bot_activity_router
-from app.api.forecast_vs_actual import bp as forecast_bp
+from app.api.forecast_vs_actual import router as forecast_vs_actual_router
 
 app = FastAPI()
 
