@@ -168,12 +168,12 @@ async function loadSets() {
   const { exchange, pair, user_id } = getActiveFilters();
   const url = `/api/strategy_sets${buildQuerySafe({ exchange, pair, user_id })}`;
 
-//  const res = await apiFetch(url, { cache: "no-store" });
-//  if (!res.ok) {
-//    if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
-//    return;
-//  }
-//  const sets = await res.json();
+ const res = await apiFetch(url, { cache: "no-store" });
+ if (!res.ok) {
+   if (tbody) tbody.innerHTML = `<tr><td colspan="8">Error ${res.status}</td></tr>`;
+   return;
+ }
+ const sets = await res.json();
 
   let sets;
   try {
