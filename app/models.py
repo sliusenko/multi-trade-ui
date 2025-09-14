@@ -4,7 +4,7 @@ from sqlalchemy import (
     UniqueConstraint, Text, text, Enum
 )
 from sqlalchemy.dialects.postgresql import TIMESTAMP
-from sqlalchemy.sql import text
+from sqlalchemy.sql import text, func 
 from datetime import datetime
 
 # Якщо в БД enum вже створений:
