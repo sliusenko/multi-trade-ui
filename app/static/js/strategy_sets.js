@@ -366,8 +366,8 @@ function bootSetsModule() {
   loadSets();
 }
 
-// if (document.readyState !== 'loading') bootSetsModule();
-// else window.addEventListener('DOMContentLoaded', bootSetsModule);
+if (document.readyState !== 'loading') bootSetsModule();
+else window.addEventListener('DOMContentLoaded', bootSetsModule);
 
 
 // експорт у глобал (на випадок ручного виклику з консолі)
@@ -377,6 +377,6 @@ window.deleteSet = deleteSet;
 window.loadSets = loadSets;
 
 // автоматично підвантажити сети при завантаженні, якщо є фільтри
-if (document.readyState !== 'loading') loadSets();
-else window.addEventListener('DOMContentLoaded', loadSets);
+// if (document.readyState !== 'loading') loadSets();
+// else window.addEventListener('DOMContentLoaded', loadSets);
 
