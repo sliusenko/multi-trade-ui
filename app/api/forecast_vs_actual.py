@@ -52,7 +52,7 @@ async def forecast_vs_actual_data(
           AND flh.exchange   = :exchange
           AND flh.user_id    = :user_id
           AND flh.timeframe  = :flh_timeframe
-          AND flh.timestamp BETWEEN NOW() - (:interval)::interval AND NOW()
+          AND flh.timestamp BETWEEN NOW() - INTERVAL :interval AND NOW()
         GROUP BY ts_hour
         ORDER BY ts_hour
     """)
