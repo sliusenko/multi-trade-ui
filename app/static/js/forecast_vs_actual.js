@@ -84,7 +84,7 @@ async function loadChart() {
 
   const res = await fetch(`/api/forecast_vs_actual_long?exchange=${exchange}&pair=${pair}&timeframe=${timeframe}&interval=${interval}`);
   const data = await res.json();
-  const rows = data.rows || [];
+  const rows = data.points || [];
 
   const ctx = document.getElementById("chartCanvas").getContext("2d");
 
