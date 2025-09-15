@@ -31,9 +31,9 @@ function renderChart(points, meta) {
   const ctx = document.getElementById("chart");
   if (chart) chart.destroy();
 
-  const labels = points.map(p => p.ts);
-  const predicted = points.map(p => p.predicted_price);
-  const actual = points.map(p => p.actual_price);
+const labels = points.map(p => new Date(p.ts));
+const predicted = points.map(p => p.predicted_price);
+const actual = points.map(p => p.actual_price);
 
   chart = new Chart(ctx, {
     type: "line",
