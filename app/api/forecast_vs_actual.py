@@ -38,6 +38,8 @@ async def forecast_vs_actual_data(
     if not lookback:
         return {"error": "❌ Невірний інтервал. Доступні: " + ", ".join(VALID_INTERVALS.keys())}
 
+    uid = user_id if user_id is not None else request.session.get("user_id")
+
     # ⚠️ вставляємо `lookback` напряму (НЕ як параметр)
     sql = text(f"""
         SELECT
