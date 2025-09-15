@@ -38,10 +38,7 @@ async def forecast_vs_actual_data(
     if not lookback:
         return {"error": "❌ Невірний інтервал. Доступні: " + ", ".join(VALID_INTERVALS.keys())}
 
-    # якщо немає user_id в query — пробуємо взяти з сесії; інакше лишаємо None
-    uid = user_id if user_id is not None else request.session.get("user_id")
-
-    # точне вирівнювання по хвилині між рядами (надійніше за ±30s)
+    # ⚠️ вставляємо `lookback` напряму (НЕ як параметр)
     sql = text(f"""
         SELECT
             date_trunc(:unit, flh.timestamp)     AS ts,
@@ -62,7 +59,7 @@ async def forecast_vs_actual_data(
           AND date_trunc('minute', ad.timestamp) = date_trunc('minute', flh.timestamp)
         WHERE flh.pair       = :pair
           AND flh.exchange   = :exchange
-          AND flh.timestamp BETWEEN NOW() - INTERVAL :lookback AND NOW()
+          AND flh.timestamp >= NOW() - INTERVAL '{lookback}'
         GROUP BY 1
         ORDER BY 1
     """)
