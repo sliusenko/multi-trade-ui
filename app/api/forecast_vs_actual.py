@@ -53,10 +53,10 @@ async def forecast_vs_actual_data(
           AND flh.timeframe = :flh_timeframe
           AND ad.timeframe  = :ad_timeframe
           AND (
-                (:uid IS NULL AND flh.user_id IS NULL) OR flh.user_id = :uid
+                (CAST(:uid AS BIGINT) IS NULL AND flh.user_id IS NULL) OR flh.user_id = CAST(:uid AS BIGINT)
               )
           AND (
-                (:uid IS NULL AND ad.user_id  IS NULL) OR ad.user_id  = :uid
+                (CAST(:uid AS BIGINT) IS NULL AND ad.user_id IS NULL) OR ad.user_id = CAST(:uid AS BIGINT)
               )
           AND date_trunc('minute', ad.timestamp) = date_trunc('minute', flh.timestamp)
         WHERE flh.pair       = :pair
