@@ -1,22 +1,22 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine
-from app.services.db import engine  # твій AsyncEngine
+from app.services.db import engine  # AsyncEngine
 from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+# "як довго дивимось назад" і "як агрегуємо"
 VALID_INTERVALS = {
-    "1h": "1 hour",
-    "4h": "4 hours",
-    "12h": "12 hours",
-    "1d": "1 day",
-    "3d": "3 days"
+    "1h":  ("1 hour",  "hour"),
+    "4h":  ("4 hours", "hour"),
+    "12h": ("12 hours","hour"),
+    "1d":  ("1 day",   "day"),
+    "3d":  ("3 days",  "day"),
 }
 
 @router.get("/forecast-vs-actual", response_class=HTMLResponse)
@@ -29,51 +29,65 @@ async def forecast_vs_actual_data(
     request: Request,
     exchange: str,
     pair: str,
-    timeframe: str,
-    interval: str,
-    flh_timeframe: str = "5m",
+    timeframe: str,              # TF для analysis_data (наприклад '1m')
+    interval: str,               # 1h/4h/12h/1d/3d
+    flh_timeframe: str = "5m",   # TF для FLH (наприклад '5m')
     user_id: Optional[int] = None
 ):
-    interval_sql = VALID_INTERVALS.get(interval)
-    if not interval_sql:
-        return {"error": "❌ Невірний інтервал. Доступні: " + ", ".join(VALID_INTERVALS)}
+    lookback, unit = VALID_INTERVALS.get(interval, (None, None))
+    if not lookback:
+        return {"error": "❌ Невірний інтервал. Доступні: " + ", ".join(VALID_INTERVALS.keys())}
 
+    # якщо немає user_id в query — пробуємо взяти з сесії; інакше лишаємо None
+    uid = user_id if user_id is not None else request.session.get("user_id")
+
+    # точне вирівнювання по хвилині між рядами (надійніше за ±30s)
     sql = text(f"""
         SELECT
-            date_trunc('hour', flh.timestamp)      AS ts_hour,
-            AVG(flh.predicted_price)               AS predicted_price,
-            AVG(ad.price)                          AS actual_price
+            date_trunc(:unit, flh.timestamp)     AS ts,
+            AVG(flh.predicted_price)::float      AS predicted_price,
+            AVG(ad.price)::float                 AS actual_price
         FROM forecast_longterm_history flh
         JOIN analysis_data ad
           ON  flh.pair      = ad.pair
           AND flh.exchange  = ad.exchange
-          AND flh.user_id   = ad.user_id
-          AND flh.timeframe = ad.timeframe
-          AND date_trunc('minute', ad.timestamp) BETWEEN flh.timestamp - INTERVAL '30 seconds' AND flh.timestamp + INTERVAL '30 seconds'
+          AND flh.timeframe = :flh_timeframe
+          AND ad.timeframe  = :ad_timeframe
+          AND (
+                (:uid IS NULL AND flh.user_id IS NULL) OR flh.user_id = :uid
+              )
+          AND (
+                (:uid IS NULL AND ad.user_id  IS NULL) OR ad.user_id  = :uid
+              )
+          AND date_trunc('minute', ad.timestamp) = date_trunc('minute', flh.timestamp)
         WHERE flh.pair       = :pair
           AND flh.exchange   = :exchange
-          AND flh.user_id    = :user_id
-          AND flh.timeframe  = :timeframe
-          AND flh.timestamp BETWEEN NOW() - INTERVAL '{interval_sql}' AND NOW()
-        GROUP BY ts_hour
-        ORDER BY ts_hour
+          AND flh.timestamp BETWEEN NOW() - INTERVAL :lookback AND NOW()
+        GROUP BY 1
+        ORDER BY 1
     """)
 
     params = {
         "pair": pair,
         "exchange": exchange,
-        "user_id": user_id or request.session.get("user_id") or 0,
-        "timeframe": flh_timeframe,
+        "uid": uid,
+        "ad_timeframe": timeframe,
+        "flh_timeframe": flh_timeframe,
+        "unit": unit,
+        "lookback": lookback,
     }
 
     async with engine.connect() as conn:
         result = await conn.execute(sql, params)
         rows = [dict(r._mapping) for r in result.fetchall()]
 
+    # твій фронт очікує саме це поле
     return {
-        "points": rows,  # ← JS чекає поле `points`
+        "points": rows,
         "exchange": exchange,
         "pair": pair,
         "timeframe": timeframe,
+        "flh_timeframe": flh_timeframe,
         "interval": interval,
+        "user_id": uid,
     }
