@@ -29,11 +29,15 @@ let chart = null;
 // Побудова графіку
 function renderChart(points, meta) {
   const ctx = document.getElementById("chart");
+  if (!ctx) {
+    console.warn("❌ Не знайдено <canvas id='chart'> в DOM");
+    return;
+  }
   if (chart) chart.destroy();
 
-const labels = points.map(p => new Date(p.ts));
-const predicted = points.map(p => p.predicted_price);
-const actual = points.map(p => p.actual_price);
+  const labels = points.map(p => new Date(p.ts));
+  const predicted = points.map(p => p.predicted_price);
+  const actual = points.map(p => p.actual_price);
 
   chart = new Chart(ctx, {
     type: "line",
@@ -45,6 +49,8 @@ const actual = points.map(p => p.actual_price);
           data: predicted,
           tension: 0.25,
           borderWidth: 2,
+          borderColor: "#4dc9ff",
+          backgroundColor: "transparent",
           spanGaps: true,
         },
         {
@@ -54,6 +60,8 @@ const actual = points.map(p => p.actual_price);
           borderDash: [6, 4],
           borderWidth: 2,
           pointRadius: 0,
+          borderColor: "#ffaa00",
+          backgroundColor: "transparent",
           spanGaps: true,
         }
       ]
@@ -61,6 +69,7 @@ const actual = points.map(p => p.actual_price);
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { labels: { color: "#cfe3ff" }},
         title: {
@@ -72,11 +81,13 @@ const actual = points.map(p => p.actual_price);
           mode: "index",
           intersect: false,
           callbacks: {
-            title: (items) => luxon.DateTime.fromISO(items[0].label).toFormat("yyyy-LL-dd HH:mm")
+            title: (items) => {
+              const dt = luxon.DateTime.fromJSDate(items[0].parsed.x);
+              return dt.toFormat("yyyy-LL-dd HH:mm");
+            }
           }
         }
       },
-      interaction: { mode: "index", intersect: false },
       scales: {
         x: {
           type: "time",
@@ -157,7 +168,7 @@ document.getElementById("btnExport").addEventListener("click", () => {
   }).catch(err => alert("❌ Експорт не вдалось: " + err.message));
 });
 
-// Автоматичне завантаження на старті
+// Автоматичне завантаження при завантаженні сторінки
 window.addEventListener("DOMContentLoaded", () => {
   loadAndRender().catch(console.error);
 });
